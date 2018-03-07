@@ -4,9 +4,10 @@ library(stringr)
 cw <- getwd()
 # str_match(cw, "(/([^/]+))+")
 # cws<-str_split(cw, '/')
-# cws<-str_split(cw, '/', simplify=TRUE)
-# this here makes the paste render a vector
-cws<-strsplit(cw, '/')
+# nah, need the simplify
+cws<-str_split(cw, '/', simplify=T)
+## we could the core strsplit, but it makes the paste render a vector, not clear how though.
+# cws<-strsplit(cw, '/')
 # cwsp<-paste(cws, sep='/', collapse='')
 cwsp<-paste(cws[1:3], collapse='/')
 cwsp
