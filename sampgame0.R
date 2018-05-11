@@ -35,3 +35,6 @@ while(lastnz>1) {
 # match() is built for detecting the first element of something.
 # unfort doesn't seem to have anything for the last match of something.
 # so, have to sort decreasing.
+
+# table() is slightly weird, especially when printing out 
+# it always includes the name of vector it was created out of.
