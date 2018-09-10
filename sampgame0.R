@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# playing with the sample function
+# playing with the interesting sample() function
 # although a game it also highlight the glory of the table() function
 # with is hideously boringly named
 # it applies to factors.
