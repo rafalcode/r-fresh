@@ -86,7 +86,8 @@ colnames(ma2) <- attrinames2
 
 # OK, what's next? Well , their sex. That's just random
 # I've turned it into a function, though it hardly needs it
-ma2 <- cbind(ma2, givesx(offnum*Nd2))
+g2N <- noff*Nd2
+ma2 <- cbind(ma2, givesx(g2N))
 attrinames2 <- c(attrinames2, 'SEX')
 colnames(ma2) <- attrinames2
 
@@ -105,3 +106,16 @@ for(i in 2:noff) {
 ma2 <- cbind(ma2, gt2)
 attrinames2 <- c(attrinames2, 'GTY')
 colnames(ma2) <- attrinames2
+
+# OK we move into 3G, pairing will be more difficult now, let's order by sex
+ma2 <- ma2[order(ma2[,2]),]
+fmd <- which(ma2[,2] == 1) # female designation array
+# actually mda[1] will be the number of males in G2 ... because ma2 is now ordered on sex
+fmd <- fmd[1]-1 # index is first female, so subtraction by 1 required if we want last male.
+# to decide the next mates based on sex (only)
+# we permute the majority sex component looking for the permutation array for G2
+if(fmd >= g2N/2) { # majority of males
+    pa2 <-sample(1:fmd, fmd)
+} else {
+    pa2 <-sample((fmd+1):g2N, g2N-fmd)
+}
