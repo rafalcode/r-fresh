@@ -46,7 +46,7 @@ vecintr
 # Note that if vecint was just 1,2,3 etc. you could write
 # vecintr[shufidx] <- 1:length(vecint)
 # and get way with it. But it's misleading because that is the single easy case.
-# Not how you can lose the old vecint, but you do have to keep the shufidx vector.
+# Note how you have to keep the shufidx vector. That's why above I stressed that you need something more
 
 
 
