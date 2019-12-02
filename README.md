@@ -14,3 +14,6 @@ cxxfunction that's not from Rccp but from inline
 
 # sto0.R
 using stop() with a function, and also, how to escape quotations.
+
+# fustop0.R
+Further adventures in using stop(), this time showing how stop(-1) is worse than useless.
