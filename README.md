@@ -20,3 +20,7 @@ Further adventures in using stop(), this time showing how stop(-1) is worse than
 
 # the f2s\*
 scripts are some way of debugging R when arguments are being called in 
+
+# sta0.R and sta1.R
+static variables in R. Upshot is you need a closure
+of a function within a function with a <<- local assignment.
