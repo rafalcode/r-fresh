@@ -6,8 +6,8 @@
 sasz <- 10 # sample size
 mxpla <- 10 # max numba of playerz (actual will be lower, depending on chance)
 
-fld <- as.factor(floor(runif(sasz) * mxpla))
-tfld <- sort(table(fld), decreasing=T)
+fld <- as.factor(floor(runif(sasz) * mxpla)) # "floored" possibly
+tfld <- sort(table(fld), decreasing=T) # "table(floored)", possibly.
 tsz <- length(tfld)
 lastnz <- tsz
 tfld
