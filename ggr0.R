@@ -15,22 +15,14 @@ library(ggrepel)
 
 set.seed(42)
 
-Cairo(800, 800, "ggr0.png")
-# ggplot(mtcars, aes(x = wt, y = 1, label = rownames(mtcars))) +
-ggplot(mtcars, aes(x = 1, y = wt, label = rownames(mtcars))) +
-  geom_point(color = "red") +
-  geom_text_repel(
-    force_pull   = 0, # do not pull toward data points
-    nudge_y      = 0.05,
-    direction    = "x",
-    angle        = 90,
-    hjust        = 0,
-    segment.size = 0.2,
-    max.iter = 1e4, max.time = 1) +
-  xlim(1, 6) + ylim(1, 0.8) +
-  theme(
-    axis.line.y  = element_blank(),
-    axis.ticks.y = element_blank(),
-    axis.text.y  = element_blank(),
-    axis.title.y = element_blank())
+Cairo(1000, 500, "ggr0.png")
+
+dat <- subset(mtcars, wt > 2.75 & wt < 3.45)
+dat$car <- rownames(dat)
+
+p <- ggplot(dat, aes(wt, mpg, label = car)) + geom_point(color = "red")
+p1 <- p + geom_text() + labs(title = "geom_text()")
+p2 <- p + geom_text_repel() + labs(title = "geom_text_repel()")
+
+gridExtra::grid.arrange(p1, p2, ncol = 2)
 dev.off()
