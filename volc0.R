@@ -29,5 +29,6 @@ res <- lfcShrink(dds, contrast = c('dex','trt','untrt'), res=res, type = 'normal
 # 3.1 Plot the most basic volcano plot
 # For the most basic volcano plot, only a single data-frame, data-matrix, or tibble of test results is required, containing point labels, log2FC, and adjusted or unadjusted P values. The default cut-off for log2FC is >|2|; the default cut-off for P value is 10e-6.
 Cairo(800, 800, "vol0.png")
-EnhancedVolcano(res, lab = rownames(res), x = 'log2FoldChange', y = 'pvalue')
+enh <- EnhancedVolcano(res, lab = rownames(res), x = 'log2FoldChange', y = 'pvalue')
+show(enh)
 dev.off()
