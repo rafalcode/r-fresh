@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 # from https://r-charts.com/evolution/line-graph-multiple-lines-ggplot2/
+# 5 random walks used as illurtation of geome_line and using repel labels.
 library(ggplot2)
 library(reshape)
 library(Cairo)
@@ -11,17 +12,19 @@ set.seed(2)
 t <- seq(0, 1, by = 0.01)
 p <- length(t) - 1
 
-# 5 paths
+# 5 random walks
 n <- 5
 I <- matrix(rnorm(n * p, 0, 1 / sqrt(p)), n, p)
+# so I has 5 rows and 100 cols. i.e. 5 walks and 100 x-positions each.
 
 # Data frame
-df1 <- data.frame(apply(I, 1, cumsum))
+df0 <- data.frame(apply(I, 1, cumsum)) # the usual random walk
 
-# In order to use your data frame in ggplot2 you will need to transform it into long format. You can achieve it making use of the melt function of the reshape package.
-df <- data.frame(x = seq_along(df1[, 1]), df1)
-# Long format
-df <- melt(df, id.vars = "x")
+# In order to use your data frame in ggplot2 you will need to transform it into long format. use reshape2's melt for this.
+df1 <- data.frame(x = seq_along(df0[, 1]), df0)
+df <- melt(df1, id.vars = "x")
+# what do you get? well a df with three cols: "x", "variable" and "value"
+# variable is X1 for all the values in column 1, followed (on the same column) by column2 with variable set to X2.
 
 # Given a data frame in long format like df it is possible to create a line chart with multiple lines in ggplot2 with geom_line the following way.
 
