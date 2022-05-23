@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 library(Cairo)
+library(ggplot2)
+library(ggrepel)
 library(RUVSeq)
 library(zebrafishRNASeq)
 library(RColorBrewer)
@@ -56,3 +58,14 @@ par(mfrow=c(1,2))
 plotPCA(set2, col=colors[x], cex=1.2)
 plotPCA(set4, col=colors[x], cex=1.2)
 dev.off()
+
+setcou <- counts(set2) # a matrix with col and rownames.
+set5 <- RUVs(setcou, genes, k=3, diffs)
+set5cou <- t(set5$normalizedCounts)
+pc0 <- prcomp(set5cou)
+xdf0 <- as.data.frame(pc0$x)
+CairoPNG("05_ggpcaplot.png", 800, 800)
+gg <- ggplot(xdf0, aes(x=PC1, y=PC2, label=rownames(xdf0))) +geom_point() +geom_text_repel()
+show(gg)
+dev.off()
+
