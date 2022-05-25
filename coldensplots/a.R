@@ -42,11 +42,13 @@ d + geom_density_2d_filled(contour_var = "count") + facet_wrap(vars(cut))
 
 
 # If we turn contouring off, we can use other geoms, such as tiles:
-d + stat_density_2d(
+CairoPNG("fnam2.png", 800, 800)
+d2 <- d + stat_density_2d(
   geom = "raster",
   aes(fill = after_stat(density)),
   contour = FALSE
 ) + scale_fill_viridis_c()
+dev.off()
 
 # Or points:
 # not nice, but may be interesting from a retro point of view.
