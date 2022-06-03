@@ -96,6 +96,7 @@ abline(c(0,1),col=1,lwd=3)
 # it's about noticing how different populations may confound a study of treatment vs. non-treatment (I suppose).
 # but actually it's not about using sva() at all, it's about using direct PCs to detect and remove
 # so he's definitely not selling sva here
+# but he says in genpop stuides the genetic signal is so weak that removing PC is unlikely to affect it. Yes, he says that.
 # but actually he only detects, and does not remove, so it's not at all great.
 data(for.exercise) # from the snpStats package
 # gives us 3 renvvars:
@@ -115,7 +116,3 @@ pop <- subject.support[controls,"stratum"]
 plot(pcs[,1],pcs[,2],col=as.numeric(pop),
       xlab="PC1",ylab="PC2")
 legend(0,0.15,legend=levels(pop),pch=19,col=1:2)
-
-## ----session_info--------------------------------------------------------
-devtools::session_info()
-
