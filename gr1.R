@@ -36,5 +36,6 @@ ggplot(data = d2, aes(x = x, xend = xend, y = y, yend = yend, color = y)) +
         axis.line.y=element_line(size = 0.5, linetype = "solid", colour = "black"),
         panel.grid.major = element_blank()) +
   ylim(-ra, ra) +
-  geom_hline(yintercept=0)
+#   geom_hline(yintercept=0) +
+  geom_rect(aes(xmin = 1, xmax = 3, ymin = 10, ymax = 15))
 dev.off()
