@@ -20,7 +20,7 @@ mid <- rep(d$x, lengths(vals))
 # so what we're going to do is generate horizontal line segmetns and so fill a bar
 # stacking them upon each other to reach the required value.
 d2 <- data.frame(x = mid - bd2, xend = mid + bd2, y = y, yend = y)
-
+# the y's and yend's are the same because the segmetn only moves on x axis,, its y coord is always the same
 CairoPNG("fname.png", 800, 800)
 ggplot(data = d2, aes(x = x, xend = xend, y = y, yend = yend, color = y)) +
   geom_segment(size = 1) +
