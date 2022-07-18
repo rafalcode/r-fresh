@@ -54,10 +54,10 @@ fit <- lmFit(eset, design)
 # head(fit$coefficients, 3)
 fit <- eBayes(fit)
 # head(fit$t, 3)
-results <- decideTests(fit[, "erpositive"])
+results <- decideTests(fit[, "erpositive"]) # from limma
 # summary(results)
 
-# group-means ------------------------------------------------------------------
+# group-means approach:
 design <- model.matrix(~0 + er, data = pData(eset))
 # head(design)
 # colSums(design)
@@ -92,16 +92,16 @@ dev.off()
 # topTable(fit2, number = 3)
 
 # 1000 genes (10% in gene set), 100 are DE (10% in gene set)
-fisher.test(matrix(c(10, 100, 90, 900), nrow = 2))
+f0 <- fisher.test(matrix(c(10, 100, 90, 900), nrow = 2))
 
 # 1000 genes (10% in gene set), 100 are DE (30% in gene set)
-fisher.test(matrix(c(30, 100, 70, 900), nrow = 2))
+f2 <- fisher.test(matrix(c(30, 100, 70, 900), nrow = 2))
 
-head(fit2$genes, 3)
+# head(fit2$genes, 3)
 entrez <- fit2$genes[, "entrez"]
 
-enrich_kegg <- kegga(fit2, geneid = entrez, species = "Hs")
-topKEGG(enrich_kegg, number = 4)
+enrich_kegg <- kegga(fit2, geneid = entrez, species = "Hs") # kegga() from limma.
+tk <- topKEGG(enrich_kegg, number = 4)
 
-enrich_go <- goana(fit2, geneid = entrez, species = "Hs")
-topGO(enrich_go, ontology = "BP", number = 3)
+enrich_go <- goana(fit2, geneid = entrez, species = "Hs") # goana() from limma
+tg <- topGO(enrich_go, ontology = "BP", number = 3) 
