@@ -1,6 +1,6 @@
 #!/opt/R-4.1.3/bin/Rscript
 # example from EnhancedVolcano's vignette.
-# Ciaro has no prolem generating the diagram.
+# Cairo has no prolem generating the diagram.
 library(Cairo)
 library(airway)
 library(magrittr)
