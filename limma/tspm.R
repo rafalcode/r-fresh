@@ -1,3 +1,4 @@
+# used inthe Soneson Delorenzi study
 ##-------------------------------------------------------------------
 ## 	Name: TSPM.R
 ##  	R code for the paper by Paul L. Auer and R.W. Doerge:
