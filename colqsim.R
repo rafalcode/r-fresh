@@ -21,7 +21,7 @@ mymu2 <- 1
 mysd2 <- 1
 
 myn <- 16    #number of obs per sample
-outfile <- "run1.txt" #name for output file
+outfile <- "colrun1.txt" #name for output file
 
 #set min and max P values for "significance"
 myPmin <- 0.0
@@ -35,7 +35,6 @@ myinc <- (myxmax-myxmin)/100
 myx <- seq(from = myxmin,to=myxmax,by=myinc)
 myy1 <- dnorm(myx,mean=mymu1,sd=mysd1)
 myy2 <- dnorm(myx,mean=mymu2,sd=mysd2)
-
 # plot
 CairoPNG("colq0.png", 800, 800)
 plot(myx,myy1,type="l",col="blue",cex.axis=1.5,lwd=2,main="Distributions of observations")
@@ -53,7 +52,7 @@ myy1 <- dnorm(myx,mean=mymu1,sd=mysdm1)
 myy2 <- dnorm(myx,mean=mymu2,sd=mysdm2)
 
 CairoPNG("colq1.png", 800, 800)
-plot(myx,myy1,type="l",col="blue",cex.axis=1.5,lwd=2,main="Distributions of means")
+plot(myx,myy1,type="l",col="blue",cex.axis=1.5,lwd=2,main="(sampling) Distribution of the mean")
 lines(myx,myy2,col="red",lwd=2)
 dev.off()
 
@@ -63,16 +62,15 @@ mycor <- 0.   #correlation = 0
 #set covariance matrix
 myvar1 <- mysd1^2
 myvar2 <- mysd2^2
-mysigma <- matrix(c(myvar1, mycor, mycor, myvar2), 2, 2)
+mysigma <- matrix(c(myvar1, mycor, mycor, myvar2), 2, 2) # prob. [[1,0],[0,1]]
 
 #initialisations
 mymean <- c(mymu1,mymu2)
-mymean
 mytruediff <- mymean[2]-mymean[1]
-mytruediff
 mypval <- vector(length=mynsim)
 mypval[1:mynsim] <- 0
 #mypval
+# CI conf interval
 myloCI <- vector(length=mynsim)
 myloCI[1:mynsim] <- 0
 myhiCI <- vector(length=mynsim)
@@ -120,8 +118,7 @@ dev.off()
 
 #plot histo of differences between means
 # mydat$counts
-X11()   #next plot in new window
-CairoPNG("colq2.png", 800, 800)
+CairoPNG("colq3.png", 800, 800)
 mydat1 <- hist(mydiff,breaks=20,cex.axis=1.5,main="Distribution of differences between means")
 show(mydat)
 dev.off()
