@@ -29,6 +29,7 @@ myPmax <- 0.05  #plot the distribustions for control (sample 1) and treatemett (
 
 #END OF INPUTS
 
+# For background, we look at the population, independently of the samples we will take later.
 myxmin <- mymu1-4*mysd1
 myxmax <- mymu1+4*mysd1
 myinc <- (myxmax-myxmin)/100
@@ -41,22 +42,26 @@ plot(myx,myy1,type="l",col="blue",cex.axis=1.5,lwd=2,main="Distributions of obse
 lines(myx,myy2,col="red",lwd=2)
 dev.off()
 
+# of course, we can only take myn sample, so we're going to look at the
+# limitations this causes us, 
 #plot distributions  of means for sample1 and 2
 #myxmin=mymu1-1*mysd1
 #myxmax=mymu1+1*mysd1
 #myinc=(myxmax-myxmin)/100
-myx <- seq(from = myxmin,to=myxmax,by=myinc)
-mysdm1 <- mysd1/sqrt(myn)
+# myx <- seq(from = myxmin,to=myxmax,by=myinc) # done already.
+mysdm1 <- mysd1/sqrt(myn) # usual formula for sd of sampling distri fo the sample mean.
 mysdm2 <- mysd2/sqrt(myn)
 myy1 <- dnorm(myx,mean=mymu1,sd=mysdm1)
 myy2 <- dnorm(myx,mean=mymu2,sd=mysdm2)
 
+# we'll just visualize this also:
 CairoPNG("colq1.png", 800, 800)
 plot(myx,myy1,type="l",col="blue",cex.axis=1.5,lwd=2,main="(sampling) Distribution of the mean")
 lines(myx,myy2,col="red",lwd=2)
 dev.off()
 
-#end of distribution plottine
+#end of distribution plotting
+# that was just for general familiarisation
 
 mycor <- 0.   #correlation = 0
 #set covariance matrix
@@ -64,7 +69,7 @@ myvar1 <- mysd1^2
 myvar2 <- mysd2^2
 mysigma <- matrix(c(myvar1, mycor, mycor, myvar2), 2, 2) # prob. [[1,0],[0,1]]
 
-#initialisations
+#initialisations & allocations
 mymean <- c(mymu1,mymu2)
 mytruediff <- mymean[2]-mymean[1]
 mypval <- vector(length=mynsim)
