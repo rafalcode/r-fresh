@@ -24,3 +24,7 @@ scripts are some way of debugging R when arguments are being called in
 # sta0.R and sta1.R
 static variables in R. Upshot is you need a closure
 of a function within a function with a <<- local assignment.
+
+# becu.R
+Printing out a beta distribution, ran into a few fundamental problems here.
+
