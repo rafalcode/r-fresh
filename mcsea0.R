@@ -23,40 +23,39 @@ cellCounts <- estimateCellCounts(RGset)
 data(mcseadata)
 # this will give us betaTest, a 10000Cpg x 20 sample matrix with beta values (clearly)
 # and also phenoTest, which just says, of the 20 samples, which is control or case.
-# but also a cov1 column which is a 3-group classification.
+# but also a cov1 column which is a 3-group classification (unknown for now).
 
 # Step 1: Ranking CpGs probes
-# To run a mCSEA analysis, you must rank all the evaluated CpGs probes with
-# some metric (e.g. t-statistic, Fold-Change. . . ). You can use rankProbes() function
-# for that aim, or prepare a ranked list with the same structure as the rankProbes()
-# output.
-# We load sample data to show how rankProbes() works:
+# Rankng iof probes can be done on:  t-statistic, Fold-Change. . . 
+# You can use rankProbes() function
+
 # We loaded to our R environment betaTest and phenoTest objects, in addition
-# to exprTest, annotation objects and association objects (we will talk about
-# these after). betaTest is a matrix with the β-values of 10000 EPIC probes for 20
+# to exprTest, annotation objects and association objects
+# exprTest 100x20 floating pt matrix. the 100 rows are ENSG gene names.
+
+# betaTest is a matrix with the β-values of 10000 EPIC probes for 20
 # samples. phenoTest is a dataframe with the explanatory variable and covariates
 # associated to the samples. When you load your own data, the structure of your
 # objects should be similar.
-# head(betaTest, 3)
 
-# rankProbes() function uses these two objects as input and apply a linear model
-# with limma package. By default, rankProbes() considers the first column of
+# rankProbes() will  apply a linear model with limma package. By default, rankProbes() considers the first column of
 # the phenotypes table as the explanatory variable in the model (e.g. cases and
 # controls) and does not take into account any covariate to adjust the models. You
 # can change this behaviour modifying explanatory and covariates options.
+
 # By default, rankProbes() assumes that the methylation data object contains
-# β-values and transform them to M-values before calculating the linear models. If
-# your methylation data object contains M-values, you must specify it (typeInput =
-# “M”). You can also use β-values for models calculation (typeAnalysis = “beta”),
-# although we do not recommend it due to it has been proven that M-values better
-# accomplish the statistical assumptions of limma analysis (Du et al. (2010)).
+# β-values and transforms them to M-values before calculating the linear models.
+
+# If # your methylation data object contains M-values, you must specify it (typeInput =
+# “M”). Nevertheless you can use β-values for models calculation (typeAnalysis = “beta”),
+# but no recommended , m-vals better for stast, beta vals better for visuals.
 myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control")
 # this also quantile-normalise
-browser()
-## Transforming beta-values to M-values
-## Calculating linear model...
-##
+# output is named vector of floats, 10k of them, names of course are probe names.
+# However, despite the word "rank" they are not in order.
+# later on they refer to the output of this as a score
 
+# you can even see this in their example
 # head(myRank)
 ## cg18478105 cg10605442 cg27657131 cg08514185 cg13587582 cg25802399
 ## 2.2586016 -0.4230906 -0.8578285 -0.6890975 -3.0001263 0.7390646
@@ -71,10 +70,8 @@ browser()
 # pheno containing pairing information (pairColumn parameter).
 
 # Step 2: Searching DMRs in predefined regions
-# Once you calculated a score for each CpG, you can perform the mCSEA analysis.
-# For that purpose, you should use mCSEATest() function. This function takes
-# as input the vector generated in the previous step, the methylation data and
-# the phenotype information. By default, it searches for differentially methylated
+# Once you calculated a score for each CpG, you should use mCSEATest() function.
+# By default, it searches for differentially methylated
 # promoters, gene bodies and CpG Islands. You can specify the regions you want
 # to test with regionsTypes option. minCpGs option specifies the minimum amount
 # of CpGs in a region to be considered in the analysis (5 by default). You can
