@@ -5,82 +5,11 @@ library(FlowSorted.Blood.450k)
 library(mCSEA)
 library(Cairo)
 
-minfiDataDir <- system.file("extdata", package = "minfiData")
-targets <- read.metharray.sheet(minfiDataDir, verbose = FALSE)
-RGset <- read.metharray.exp(targets = targets)
-# next a blood-sample (even leukemia-specific) minfi function is used.i
-# it's concerned with cell types, especially leukemia
-cellCounts <- estimateCellCounts(RGset)
-# amazingly this is not used again!
-
-# I don't think the above has much to do with the below:
-
-# Cell type heterogeneity correction
-# Different cell types proportions across samples are one of the major sources of
-# variability in methylation data from tissues like blood or saliva (McGregor et
-# al. (2016)). There are a lot of packages which can be used to estimate cell
-# types proportions in each sample in order to correct for this bias (reviewed in
-# McGregor et al. (2016)). Here we supply an example where blood reference data
-# is used to estimate cell types proportions of each blood sample.
 data(mcseadata)
-# this will give us betaTest, a 10000Cpg x 20 sample matrix with beta values (clearly)
-# and also phenoTest, which just says, of the 20 samples, which is control or case.
-# but also a cov1 column which is a 3-group classification (unknown for now).
-
-# Step 1: Ranking CpGs probes
-# Rankng iof probes can be done on:  t-statistic, Fold-Change. . . 
-# You can use rankProbes() function
-
-# We loaded to our R environment betaTest and phenoTest objects, in addition
-# to exprTest, annotation objects and association objects
-# exprTest 100x20 floating pt matrix. the 100 rows are ENSG gene names.
-
-# betaTest is a matrix with the β-values of 10000 EPIC probes for 20
-# samples. phenoTest is a dataframe with the explanatory variable and covariates
-# associated to the samples. When you load your own data, the structure of your
-# objects should be similar.
-
-# rankProbes() will  apply a linear model with limma package. By default, rankProbes() considers the first column of
-# the phenotypes table as the explanatory variable in the model (e.g. cases and
-# controls) and does not take into account any covariate to adjust the models. You
-# can change this behaviour modifying explanatory and covariates options.
-
-# By default, rankProbes() assumes that the methylation data object contains
-# β-values and transforms them to M-values before calculating the linear models.
-
-# If # your methylation data object contains M-values, you must specify it (typeInput =
-# “M”). Nevertheless you can use β-values for models calculation (typeAnalysis = “beta”),
-# but no recommended , m-vals better for stast, beta vals better for visuals.
-myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control")
-# this also quantile-normalise (wow, does it?)
-# output is named vector of floats, 10k of them, names of course are probe names.
-# However, despite the word "rank" they are not in order.
-# later on they refer to the output of this as a score
-
-# you can even see this in their example
-# head(myRank)
-## cg18478105 cg10605442 cg27657131 cg08514185 cg13587582 cg25802399
-## 2.2586016 -0.4230906 -0.8578285 -0.6890975 -3.0001263 0.7390646
-
-# You can also supply rankProbes() function with a SummarizedExperiment object.
-# In that case, if you don’t specify a pheno object, phenotypes will be extracted
-# from the SummarizedExperiment object with colData() function.
-
-# Paired analysis
-# It is possible to take into account paired samples in rankProbes() analysis. For
-# that aim, you should use paired = TRUE parameter and specify the column in
-# pheno containing pairing information (pairColumn parameter).
-
-# Step 2: Searching DMRs in predefined regions
-# Once you calculated a score for each CpG, you should use mCSEATest() function.
-# By default, it searches for differentially methylated
-# promoters, gene bodies and CpG Islands. You can specify the regions you want
-# to test with regionsTypes option. minCpGs option specifies the minimum amount
-# of CpGs in a region to be considered in the analysis (5 by default). You can
-# increase the number of processors to use with nproc option (recommended if you
-# have enough computational resources). Finally, you should specify if the array
-# platform is 450k or EPIC with the platform option.
-
+phenoTest$Pair <- rep(paste0("P", 1:10),2)
+# myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control")
+myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control", paired=T, pairColumn=3)
+stop("ONLYME!")
 myResults <- mCSEATest(myRank, betaTest, phenoTest, regionsTypes = "promoters", platform = "EPIC")
 ## Associating CpG sites to promoters
 ## Analysing promoters
