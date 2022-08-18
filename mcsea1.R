@@ -9,7 +9,9 @@ data(mcseadata)
 phenoTest$Pair <- rep(paste0("P", 1:10),2)
 # myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control")
 myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control", paired=T, pairColumn=3)
-stop("ONLYME!")
+# stop("ONLYME!")
+# No real different in myRank strucure when you include the pairing
+# it must be something that goes on behind our backs.
 myResults <- mCSEATest(myRank, betaTest, phenoTest, regionsTypes = "promoters", platform = "EPIC")
 ## Associating CpG sites to promoters
 ## Analysing promoters
