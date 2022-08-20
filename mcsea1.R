@@ -1,16 +1,19 @@
 #!/usr/bin/env Rscript
-# this is the very scattered MCSEA vignette
+# modification of the "the very scattered" MCSEA vignette for trying out pairing.
 library(minfi)
 library(FlowSorted.Blood.450k)
 library(mCSEA)
 library(Cairo)
 
-data(mcseadata)
+data(mcseadata) # bring in their clump o' data)
+
+# Add a pairing scheme to test the pariing aspect out.
 phenoTest$Pair <- rep(paste0("P", 1:10),2)
+
 # myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control")
 myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control", paired=T, pairColumn=3)
 # stop("ONLYME!")
-# No real different in myRank strucure when you include the pairing
+# So? No real difference in myRank structure when you include the pairing
 # it must be something that goes on behind our backs.
 myResults <- mCSEATest(myRank, betaTest, phenoTest, regionsTypes = "promoters", platform = "EPIC")
 ## Associating CpG sites to promoters

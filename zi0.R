@@ -7,6 +7,9 @@
 # ref. https://stats.oarc.ucla.edu/r/dae/zinb/
 library(ggplot2)
 library(Cairo)
+require(pscl)
+require(MASS)
+require(boot)
 
 # Wow, that link is so complicated.
 # Have no time ot delve into it just for http://jtleek.com/svaseq/simulateData.html
@@ -36,4 +39,4 @@ ggplot(zinb, aes(fcount, fill = camper)) +
         scale_x_log10() +
         facet_grid(camper ~ ., margins=TRUE, scales="free_y")
 dev.off()
-# in that diagra you can see that the number of counts for fcount=0 is very high.
+# in that diagram you can see that the number of counts for fcount=0 is very high.
