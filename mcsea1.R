@@ -15,7 +15,7 @@ myRank <- rankProbes(betaTest, phenoTest, refGroup = "Control", paired=T, pairCo
 # stop("ONLYME!")
 # So? No real difference in myRank structure when you include the pairing
 # it must be something that goes on behind our backs.
-myResults <- mCSEATest(myRank, betaTest, phenoTest, regionsTypes = "promoters", platform = "EPIC")
+# myResults <- mCSEATest(myRank, betaTest, phenoTest, regionsTypes = "promoters", platform = "EPIC")
 ## Associating CpG sites to promoters
 ## Analysing promoters
 ## 38 DMRs found (padj < 0.05)

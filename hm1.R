@@ -6,7 +6,7 @@ library(Cairo)
 
 # for heatmaps, matrices are the best
 x <- as.matrix(mtcars)
-rc <- rainbow(nrow(x), start = 0, end = .3)
+rc <- rainbow(nrow(x), start = 0, end = .3) # rainbow() from base R
 cc <- rainbow(ncol(x), start = 0, end = .3)
 
 CairoPNG("hm10.png", 800, 800)
