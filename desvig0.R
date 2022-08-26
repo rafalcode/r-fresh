@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
 # from, hthe Interaction section of the DESEq2 vignette
 # but echo=F for the RMD so this code doesn't come out.
 
@@ -24,7 +25,9 @@ plotit <- function(d, title) {
 }
 
 nrcou <- 20 # was: npg .. but I interpret: number of replicate counts for each condition-group
-mu <- 2^c(8,10,9,11,10,12) # Note the power of two's style! These are six mu's which will help create 6 gene count vectors, one for each condition-group (2 conditions, 3 groups = 6)
+mu <- 2^c(8,10,9,11,10,12)
+# Note above mu, the power of two's style! These are six mu's which will help create 6 gene count vectors,
+# one for each condition-group (2 conditions, 3 groups = 6)
 cond <- rep(rep(c("A","B"),each=nrcou),3)
 geno <- rep(c("I","II","III"),each=2*nrcou)
 # table(cond, geno)
