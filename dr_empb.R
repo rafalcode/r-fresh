@@ -1,14 +1,19 @@
+#!/usr/bin/env Rscript
 # David Robinson
 # title: "Understanding empirical Bayes estimation (using baseball statistics)"
 # description: "An intuitive explanation of empirical Bayes estimation in terms of estimating baseball batting averages."
+# the post is here: http://varianceexplained.org/r/empirical_bayes_baseball/
 
-library(knitr)
-opts_chunk$set(cache = TRUE, warning = FALSE, message = FALSE)
+# this really is "that easy" as David stress in his post, but only towards the ends
+# 1. Estimate the overall distribution of your data.
+# 2. Use that distribution as your prior for estimating each average.
+
+library(knitr) # has kable() a knitr-table() so to speak, renders stuff into a table for easy viewing I expect.
+opts_chunk$set(cache = TRUE, warning = FALSE, message = FALSE) # knitr, for the code chunks.
 options(digits = 3)
 library(ggplot2)
-theme_set(theme_bw())
-
-# If you want a more technical version of this post, check out [this great paper](https://projecteuclid.org/euclid.imsc/1288099025)). This post is, rather, about a very useful statistical method for estimating a large number of proportions, called **empirical Bayes estimation**. It's to help you with data that looks like this:
+theme_set(theme_bw()) # ggplot2, some sort of templating resource.
+library(Cairo)
 
 # d <- data.frame(Success = c(11, 82, 2, 0, 1203, 5), Total = c(104, 1351, 26, 40, 7592, 166))
 # kable(d)
@@ -55,61 +60,58 @@ career <- Master %>%
 
 # that's not really what I was looking for. These aren't the best batters, they're just the batters who went up once or twice and got lucky. How about the worst batters?
 
-career %>% arrange(average) %>% head(5) %>% kable()
+# career %>% arrange(average) %>% head(5) %>% kable()
 
-Also not what I was looking for. That "average" is a really crummy estimate. **Let's make a better one.**
+# Also not what I was looking for. That "average" is a really crummy estimate. **Let's make a better one.**
 
-### Step 1: Estimate a prior from all your data
+### Step 1: Estimate a prior from all your data, very much a key element of emp bayes.
 
-Let's look at the distribution of batting averages across players.
+# Let's look at the distribution of batting averages across players.
 
-```{r dependson = "lahman", echo = FALSE}
+CairoPNG("eb0.png", 800, 800)
 career %>%
     filter(AB >= 500) %>%
     ggplot(aes(average)) +
     geom_histogram(binwidth = .005)
-```
+dev.off()
 
-(For the sake of estimating the prior distribution, I've filtered out all players that have fewer than 500 at-bats, since we'll get a better estimate from the less noisy cases. I show a more principled approach in the Appendix).
+# note he wants a nice prior so some fitlering is done there.
 
-The first step of empirical Bayes estimation is to estimate a beta prior using this data. Estimating priors from the data you're currently analyzing is not the typical Bayesian approach- usually you decide on your priors ahead of time. There's a lot of debate and discussion about when and where it's appropriate to use empirical Bayesian methods, but it basically comes down to how many observations we have: if we have a lot, we can get a good estimate that doesn't depend much on any one individual. Empirical Bayes is an **approximation** to more exact Bayesian methods- and with the amount of data we have, it's a very good approximation.
+# Estimating priors from the data you're currently analyzing is not the typical Bayesian approach (threfore he Empirical" bayes, I thnk, as usually you decide on your priors ahead of time. You're may be even required.
+# There's a lot of debate and discussion about when and where it's appropriate to use empirical Bayesian methods, but it basically comes down to how many observations we have: if we have a lot, we can get a good estimate that doesn't depend much on any one individual. So that's the key, you need a lot.
+# Empirical Bayes is an **approximation** to more exact Bayesian methods- and with the amount of data we have, it's a very good approximation.
 
-So far, a beta distribution looks like a pretty appropriate choice based on the above histogram. (What would make it a bad choice? Well, suppose the histogram had two peaks, or three, instead of one. Then we might need a [mixture of Betas](https://en.wikipedia.org/wiki/Mixture_model), or an even more complicated model). So we know we want to fit the following model:
+# So far, a beta distribution looks like a pretty appropriate choice based on the above histogram. (What would make it a bad choice? Well, suppose the histogram had two peaks, or three, instead of one. Then we might need a [mixture of Betas](https://en.wikipedia.org/wiki/Mixture_model), or an even more complicated model). So we know we want to fit the following model:
 
-$$X\sim\mbox{Beta}(\alpha_0,\beta_0)$$
+# $$X\sim\mbox{Beta}(\alpha_0,\beta_0)$$
 
-We just need to pick $$\alpha_0$$ and $$\beta_0$$, which we call "hyper-parameters" of our model. There are many methods in R for fitting a probability distribution to data (`optim`, `mle`, `bbmle`, etc). You don't even have to use maximum likelihood: you could [use the mean and variance](http://stats.stackexchange.com/questions/12232), called the "method of moments". But we'll use the [fitdistr](http://www.inside-r.org/r-doc/MASS/fitdistr) function from MASS.
+# We just need to pick $$\alpha_0$$ and $$\beta_0$$, which we call "hyper-parameters" of our model. There are many methods in R for fitting a probability distribution to data (`optim`, `mle`, `bbmle`, etc). You don't even have to use maximum likelihood: you could [use the mean and variance](http://stats.stackexchange.com/questions/12232), called the "method of moments". But we'll use the [fitdistr](http://www.inside-r.org/r-doc/MASS/fitdistr) function from MASS.
 
-```{r mle, dependson = "lahman"}
 # just like the graph, we have to filter for the players we actually
 # have a decent estimate of
 career_filtered <- career %>%
     filter(AB >= 500)
 
-m <- MASS::fitdistr(career_filtered$average, dbeta,
-                    start = list(shape1 = 1, shape2 = 10))
+m <- MASS::fitdistr(career_filtered$average, dbeta, start = list(shape1 = 1, shape2 = 10))
 
 alpha0 <- m$estimate[1]
 beta0 <- m$estimate[2]
-```
 
-This comes up with $$\alpha_0=`r alpha0`$$ and $$\beta_0=`r beta0`$$. How well does this fit the data?
-
-```{r dependson = "mle", echo = FALSE}
+CairoPNG("eb1.png", 800, 800)
 ggplot(career_filtered) +
   geom_histogram(aes(average, y = ..density..), binwidth = .005) +
-  stat_function(fun = function(x) dbeta(x, alpha0, beta0), color = "red",
-                size = 1) +
+  stat_function(fun = function(x) dbeta(x, alpha0, beta0), color = "red", size = 1) +
   xlab("Batting average")
-```
+dev.off()
+# Not bad! Not perfect, but something we can work with.
 
-Not bad! Not perfect, but something we can work with.
-
+# so now a decent fit has been found, so let's use it!
 ### Step 2: Use that distribution as a prior for each individual estimate
 
-Now when we look at any individual to estimate their batting average, we'll start with our overall prior, and [update](https://en.wikipedia.org/wiki/Bayesian_inference) based on the individual evidence. I went over this process in detail in the [original Beta distribution post](http://stats.stackexchange.com/questions/47771/what-is-the-intuition-behind-beta-distribution): it's as simple as adding $$\alpha_0$$ to the number of hits, and $$\alpha_0 + \beta_0$$ to the total number of at-bats.
+# Now when we look at any individual to estimate their batting average, we'll start with our overall prior, and [update](https://en.wikipedia.org/wiki/Bayesian_inference) based on the individual evidence. I went over this process in detail in the [original Beta distribution post](http://stats.stackexchange.com/questions/47771/what-is-the-intuition-behind-beta-distribution): 
+# ACTUALLY, ther's no need to go back, because it's as simple as adding $$\alpha_0$$ to the number of hits, and $$\alpha_0 + \beta_0$$ to the total number of at-bats.
 
-For example, consider our hypothetical batter from the introduction that went up 1000 times, and got 300 hits. We would estimate his batting average as:
+# For example, consider our hypothetical batter from the introduction that went up 1000 times, and got 300 hits. We would estimate his batting average as:
 
 $$\frac{300+\alpha_0}{1000+\alpha_0+\beta_0}=\frac{300+`r round(alpha0, 1)`}{1000+`r round(alpha0, 1)`+`r round(beta0, 1)`}=`r (300 + alpha0) / (1000 + alpha0 + beta0)`$$
 
