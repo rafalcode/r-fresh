@@ -15,12 +15,13 @@ options(digits=3)
 
 # Ordinary fit
 fit <- lmFit(y,design)
-ebfit <- eBayes(fit)
+ebfit <- eBayes(fit) # "moderation" invokes some Bayesianism via informed prior for taming purposes.
 tt <- topTable(ebfit,coef=2)
-# dim(fit)
-# colnames(fit)
-# rownames(fit)[1:10]
-# names(fit)
+# dim(fit) # 100 2
+# colnames(fit) # same as colnames for design.
+# rownames(fit)[1:10] # gene names
+# names(fit) # the components of the object ebfit.
+stop("OM!")
 
 # Fold-change thresholding
 fit2 <- treat(fit,lfc=0.1)

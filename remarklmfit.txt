@@ -1,0 +1,299 @@
+Remarkable p values
+
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+nutria@neilhp:~/rafgh/r-fresh$ apcs radian
+darkradiant - Level design toolchain for DOOM3 and The Dark Mod
+darkradiant-plugins-darkmod - DarkMod-specific plugins for DarkRadiant
+libghc-juicypixels-dev - Haskell picture loading and serialization library
+libghc-juicypixels-doc - Haskell picture loading and serialization library; documentation
+libghc-juicypixels-prof - Haskell picture loading and serialization library; profiling libraries
+libgeo-constants-perl - standard constants used by Geo perl packages
+libgeo-functions-perl - standard functions for Geo perl modules
+luminance-hdr - graphical user interface providing a workflow for HDR imaging
+radiant - explore hierarchical metagenomic data with zoomable pie charts
+libangles-dev - Robot OS set of simple math utilities to work with angles
+python3-angles - Robot OS set of simple math utilities to work with angles (Python 3)
+libsciplot1 - widget for scientific plotting
+wcalc - Flexible command-line scientific calculator
+nutria@neilhp:~/rafgh/r-fresh$ R
+
+R version 4.2.1 (2022-06-23) -- "Funny-Looking Kid"
+Copyright (C) 2022 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> source ("lmf0.R")
+Error in eval(ei, envir) : OM!
+> ls()
+[1] "design" "ebfit"  "fit"    "sd"     "tt"     "y"
+> str(sd)
+ num [1:100] 0.251 0.441 0.37 0.311 0.266 ...
+> summary(sd)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+  0.162   0.258   0.305   0.340   0.392   0.667
+> summary(fit)
+                 Length Class  Mode
+coefficients     200    -none- numeric
+rank               1    -none- numeric
+assign             0    -none- NULL
+qr                 5    qr     list
+df.residual      100    -none- numeric
+sigma            100    -none- numeric
+cov.coefficients   4    -none- numeric
+stdev.unscaled   200    -none- numeric
+pivot              2    -none- numeric
+Amean            100    -none- numeric
+method             1    -none- character
+design            12    -none- numeric
+> design
+     Grp1 Grp2vs1
+[1,]    1       0
+[2,]    1       0
+[3,]    1       0
+[4,]    1       1
+[5,]    1       1
+[6,]    1       1
+> head(y)
+          [,1]     [,2]     [,3]   [,4]    [,5]    [,6]
+Gene 1  0.1999 -0.18903  0.03121  2.110  1.8751  1.9948
+Gene 2 -0.3406 -0.03149 -0.18334  2.515  1.4940  2.3553
+Gene 3 -0.6239 -0.72356 -0.03045  0.161  0.2100  0.5094
+Gene 4  0.5453 -0.20693 -0.56013 -0.431 -0.2904  0.1245
+Gene 5 -0.2568  0.00908 -0.00328 -0.314  0.1805  0.0604
+Gene 6 -0.0592  0.50351 -0.34194 -0.286  0.0593 -0.3174
+> dim(fit)
+[1] 100   2
+> head(fit)
+An object of class "MArrayLM"
+$coefficients
+          Grp1 Grp2vs1
+Gene 1  0.0140  1.9794
+Gene 2 -0.1851  2.3066
+Gene 3 -0.4593  0.7526
+Gene 4 -0.0739 -0.1252
+Gene 5 -0.0837  0.0595
+Gene 6  0.0341 -0.2154
+
+$rank
+[1] 2
+
+$assign
+NULL
+
+$qr
+$qr
+       Grp1 Grp2vs1
+[1,] -2.449  -1.225
+[2,]  0.408   1.225
+[3,]  0.408   0.290
+[4,]  0.408  -0.527
+[5,]  0.408  -0.527
+[6,]  0.408  -0.527
+
+$qraux
+[1] 1.41 1.29
+
+$pivot
+[1] 1 2
+
+$tol
+[1] 1e-07
+
+$rank
+[1] 2
+
+
+$df.residual
+[1] 4 4 4 4 4 4
+
+$sigma
+Gene 1 Gene 2 Gene 3 Gene 4 Gene 5 Gene 6
+ 0.161  0.403  0.297  0.448  0.211  0.338
+
+$cov.coefficients
+          Grp1 Grp2vs1
+Grp1     0.333  -0.333
+Grp2vs1 -0.333   0.667
+
+$stdev.unscaled
+        Grp1 Grp2vs1
+Gene 1 0.577   0.816
+Gene 2 0.577   0.816
+Gene 3 0.577   0.816
+Gene 4 0.577   0.816
+Gene 5 0.577   0.816
+Gene 6 0.577   0.816
+
+$pivot
+[1] 1 2
+
+$Amean
+ Gene 1  Gene 2  Gene 3  Gene 4  Gene 5  Gene 6
+ 1.0037  0.9682 -0.0830 -0.1365 -0.0539 -0.0736
+
+$method
+[1] "ls"
+
+$design
+     Grp1 Grp2vs1
+[1,]    1       0
+[2,]    1       0
+[3,]    1       0
+[4,]    1       1
+[5,]    1       1
+[6,]    1       1
+
+> str(fit)
+Formal class 'MArrayLM' [package "limma"] with 1 slot
+  ..@ .Data:List of 12
+  .. ..$ : num [1:100, 1:2] 0.014 -0.1851 -0.4593 -0.0739 -0.0837 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : int 2
+  .. ..$ : NULL
+  .. ..$ :List of 5
+  .. .. ..$ qr   : num [1:6, 1:2] -2.449 0.408 0.408 0.408 0.408 ...
+  .. .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. .. ..$ : NULL
+  .. .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. .. ..$ qraux: num [1:2] 1.41 1.29
+  .. .. ..$ pivot: int [1:2] 1 2
+  .. .. ..$ tol  : num 1e-07
+  .. .. ..$ rank : int 2
+  .. .. ..- attr(*, "class")= chr "qr"
+  .. ..$ : int [1:100] 4 4 4 4 4 4 4 4 4 4 ...
+  .. ..$ : Named num [1:100] 0.161 0.403 0.297 0.448 0.211 ...
+  .. .. ..- attr(*, "names")= chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. ..$ : num [1:2, 1:2] 0.333 -0.333 -0.333 0.667
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : num [1:100, 1:2] 0.577 0.577 0.577 0.577 0.577 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : int [1:2] 1 2
+  .. ..$ : Named num [1:100] 1.0037 0.9682 -0.083 -0.1365 -0.0539 ...
+  .. .. ..- attr(*, "names")= chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. ..$ : chr "ls"
+  .. ..$ : num [1:6, 1:2] 1 1 1 1 1 1 0 0 0 1 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : NULL
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  ..$ names: chr [1:12] "coefficients" "rank" "assign" "qr" ...
+> str(ebfit)
+Formal class 'MArrayLM' [package "limma"] with 1 slot
+  ..@ .Data:List of 23
+  .. ..$ : num [1:100, 1:2] 0.014 -0.1851 -0.4593 -0.0739 -0.0837 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : int 2
+  .. ..$ : NULL
+  .. ..$ :List of 5
+  .. .. ..$ qr   : num [1:6, 1:2] -2.449 0.408 0.408 0.408 0.408 ...
+  .. .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. .. ..$ : NULL
+  .. .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. .. ..$ qraux: num [1:2] 1.41 1.29
+  .. .. ..$ pivot: int [1:2] 1 2
+  .. .. ..$ tol  : num 1e-07
+  .. .. ..$ rank : int 2
+  .. .. ..- attr(*, "class")= chr "qr"
+  .. ..$ : int [1:100] 4 4 4 4 4 4 4 4 4 4 ...
+  .. ..$ : Named num [1:100] 0.161 0.403 0.297 0.448 0.211 ...
+  .. .. ..- attr(*, "names")= chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. ..$ : num [1:2, 1:2] 0.333 -0.333 -0.333 0.667
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : num [1:100, 1:2] 0.577 0.577 0.577 0.577 0.577 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : int [1:2] 1 2
+  .. ..$ : Named num [1:100] 1.0037 0.9682 -0.083 -0.1365 -0.0539 ...
+  .. .. ..- attr(*, "names")= chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. ..$ : chr "ls"
+  .. ..$ : num [1:6, 1:2] 1 1 1 1 1 1 0 0 0 1 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : NULL
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : num 5.71
+  .. ..$ : num 0.0799
+  .. ..$ : num [1:2] 0.125 137.566
+  .. ..$ : num 0.01
+  .. ..$ : Named num [1:100] 0.0577 0.114 0.0833 0.1298 0.0653 ...
+  .. .. ..- attr(*, "names")= chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. ..$ : num [1:100, 1:2] 0.101 -0.95 -2.757 -0.355 -0.567 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : num [1:100] 9.71 9.71 9.71 9.71 9.71 ...
+  .. ..$ : num [1:100, 1:2] 0.9215 0.3654 0.0208 0.73 0.5836 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : num [1:100, 1:2] -4.75 -4.63 -4.07 -4.74 -4.71 ...
+  .. .. ..- attr(*, "dimnames")=List of 2
+  .. .. .. ..$ : chr [1:100] "Gene 1" "Gene 2" "Gene 3" "Gene 4" ...
+  .. .. .. ..$ : chr [1:2] "Grp1" "Grp2vs1"
+  .. ..$ : num [1:100] 103.311 59.651 5.351 0.521 0.174 ...
+  .. ..$ : num [1:100] 2.84e-07 3.50e-06 2.71e-02 6.10e-01 8.43e-01 ...
+  ..$ names: chr [1:23] "coefficients" "rank" "assign" "qr" ...
+> head(colnames(ebfit))
+[1] "Grp1"    "Grp2vs1"
+> head(rownames(ebfit))
+[1] "Gene 1" "Gene 2" "Gene 3" "Gene 4" "Gene 5" "Gene 6"
+> names(ebfit)
+ [1] "coefficients"     "rank"             "assign"           "qr"
+ [5] "df.residual"      "sigma"            "cov.coefficients" "stdev.unscaled"
+ [9] "pivot"            "Amean"            "method"           "design"
+[13] "df.prior"         "s2.prior"         "var.prior"        "proportion"
+[17] "s2.post"          "t"                "df.total"         "p.value"
+[21] "lods"             "F"                "F.p.value"
+> head(tt)
+         logFC AveExpr     t  P.Value adj.P.Val     B
+Gene 1   1.979  1.0037 10.09 1.84e-06  0.000184  5.55
+Gene 2   2.307  0.9682  8.37 9.56e-06  0.000478  3.83
+Gene 58 -1.232 -0.2543 -3.28 8.56e-03  0.248197 -3.29
+Gene 3   0.753 -0.0830  3.19 9.93e-03  0.248197 -3.44
+Gene 52 -0.611  0.0436 -3.02 1.32e-02  0.264210 -3.73
+Gene 65  0.639 -0.1779  2.79 1.98e-02  0.329707 -4.14
+> head(y)
+          [,1]     [,2]     [,3]   [,4]    [,5]    [,6]
+Gene 1  0.1999 -0.18903  0.03121  2.110  1.8751  1.9948
+Gene 2 -0.3406 -0.03149 -0.18334  2.515  1.4940  2.3553
+Gene 3 -0.6239 -0.72356 -0.03045  0.161  0.2100  0.5094
+Gene 4  0.5453 -0.20693 -0.56013 -0.431 -0.2904  0.1245
+Gene 5 -0.2568  0.00908 -0.00328 -0.314  0.1805  0.0604
+Gene 6 -0.0592  0.50351 -0.34194 -0.286  0.0593 -0.3174
+> head(var(y))
+          [,1]      [,2]      [,3]     [,4]     [,5]     [,6]
+[1,]  0.160799  0.000503  0.001484 -0.01183  0.02958 -0.00312
+[2,]  0.000503  0.093756  0.000647 -0.01318 -0.00332  0.00379
+[3,]  0.001484  0.000647  0.116529  0.00771 -0.01044 -0.01400
+[4,] -0.011834 -0.013176  0.007706  0.19028  0.08355  0.11124
+[5,]  0.029578 -0.003315 -0.010436  0.08355  0.23820  0.09656
+[6,] -0.003121  0.003794 -0.013999  0.11124  0.09656  0.21186
+>
