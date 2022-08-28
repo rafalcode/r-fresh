@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 #from lmFit's help ?lmFit
 library(limma)
+library(Cairo)
 
 # Simulate gene expression data for 100 probes and 6 microarrays
 # Microarray are in two groups
@@ -16,43 +17,55 @@ options(digits=3)
 # Ordinary fit
 fit <- lmFit(y,design)
 ebfit <- eBayes(fit) # "moderation" invokes some Bayesianism via informed prior for taming purposes.
-tt <- topTable(ebfit,coef=2)
+tt <- topTable(ebfit,coef=2) # BTW, you can't run topTable without the eBayes() step.
 # dim(fit) # 100 2
 # colnames(fit) # same as colnames for design.
 # rownames(fit)[1:10] # gene names
+# the fit object can have alot of components .. even head() will shoot off screen
+# the many compoenents can be named via:
 # names(fit) # the components of the object ebfit.
-stop("OM!")
 
 # Fold-change thresholding
-fit2 <- treat(fit,lfc=0.1)
-topTreat(fit2,coef=2)
+fit2 <- treat(ebfit,lfc=0.1)
+ttt <- topTreat(fit2,coef=2)
 
 # Volcano plot
-volcanoplot(fit,coef=2,highlight=2)
+CairoPNG("lmf0.png", 800, 800)
+volcanoplot(ebfit,coef=2,highlight=2)
+dev.off()
 
 # Mean-difference plot
-plotMD(fit,column=2)
+CairoPNG("lmf1.png", 800, 800)
+plotMD(ebfit,column=2)
+dev.off()
 
 # Q-Q plot of moderated t-statistics
-qqt(fit$t[,2],df=fit$df.residual+fit$df.prior)
+CairoPNG("lmf2.png", 800, 800)
+qqt(ebfit$t[,2], df = ebfit$df.residual + ebfit$df.prior) # qqt() a limma func.
 abline(0,1)
+dev.off()
 
 # Various ways of writing results to file
-## Not run: write.fit(fit,file="exampleresults.txt")
-## Not run: write.table(fit,file="exampleresults2.txt")
+write.fit(ebfit,file="lmf0.txt")
+write.table(ebfit,file="lmf1.txt")
+
 # Fit with correlated arrays
 # Suppose each pair of arrays is a block
 block <- c(1,1,2,2,3,3)
 dupcor <- duplicateCorrelation(y,design,block=block)
-dupcor$consensus.correlation
-fit3 <- lmFit(y,design,block=block,correlation=dupcor$consensus)
+# dupcor$consensus.correlation
+fit3 <- lmFit(y, design, block=block, correlation=dupcor$consensus)
+# don't know why they leave the following out:
+# dim(fit3)
+fit3 <- eBayes(fit3)
+tt3 <- topTable(fit3,coef=2)
 
-# Fit with duplicate probes
+# Fit with duplicate probes # designed as more interesting? i.e. eBayes applied.
 # Suppose two side-by-side duplicates of each gene
 rownames(y) <- paste("Gene",rep(1:50,each=2))
-dupcor <- duplicateCorrelation(y,design,ndups=2)
-dupcor$consensus.correlation
-fit4 <- lmFit(y,design,ndups=2,correlation=dupcor$consensus)
-dim(fit4)
+dupcor2 <- duplicateCorrelation(y,design,ndups=2)
+# dupcor2$consensus.correlation
+fit4 <- lmFit(y,design,ndups=2,correlation=dupcor2$consensus)
+# dim(fit4)
 fit4 <- eBayes(fit4)
-topTable(fit4,coef=2)
+tt4 <- topTable(fit4,coef=2)
