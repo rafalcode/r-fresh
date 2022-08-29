@@ -28,7 +28,7 @@ plotit0 <- function(d, title) {
 }
 
 nrcou <- 20 # was: npg .. but I interpret: number of replicate counts for each condition-group
-mu <- 2^c(8,10,9,11,10,12)
+mu <- 2^c(18,21,20,22,23,23)
 # Note above mu, the power of two's style! These are six mu's which will help create 6 gene count vectors,
 # one for each condition-group (2 conditions, 3 groups = 6)
 cond <- rep(rep(c("A","B"),each=nrcou),3)
