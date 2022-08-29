@@ -1,14 +1,25 @@
-OK so we have two genes and, 2 conditions and three subgroups.
+>>> Story of desvig1.R results.
+
+OK so we have two genes and, 2 yonditions and three subgroups.
+Cond A has 60 samples of which 20 each for each of the genotypes (subgroups)
+Ditto for condition B: so 120 samples in total
+
+Note that this is a massive number of samples per condition-subgroup.
+Usually you get less, roughly half.
+
 We habve six samples. 2 each per subgroup
 and oen condition each for ach pair in the three subgrusp.
 
-Now, in both genes, you get higer expression in second group of 1. And a further 1 hhger in group III
-that's common to both genes.
+Now, in both genes, genoII is "1pt higher" than genoI , and genoII is " 1pt higher again
+
+Gene 1 shows consistent increase of two points for condB across Genos.
+IN gene 2, same also holds for genoI and GenoII. However, in Geno III quite perversely,
+a drop of 2 pts occurs.
 
 NB! Note we will consider gene 1  and gene 2 separately, they are not being averaged! 
 In particular this file only considers the seond one!
 
-One diagram and one linera model for each!
+One diagram and one linear model for each!
 
 Now what happens when in only one of the genes, condtion B causes a rise in 2 of he subgroups but a fall int he second?
 This does not at all happen in gene one, where everything is regular.
