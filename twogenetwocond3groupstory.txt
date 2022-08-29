@@ -1,0 +1,113 @@
+OK so we have two genes and, 2 conditions and three subgroups.
+We habve six samples. 2 each per subgroup
+and oen condition each for ach pair in the three subgrusp.
+
+Now, in both genes, you get higer expression in second group of 1. And a further 1 hhger in group III
+that's common to both genes.
+
+NB! Note we will consider gene 1  and gene 2 separately, they are not being averaged! 
+In particular this file only considers the seond one!
+
+One diagram and one linera model for each!
+
+Now what happens when in only one of the genes, condtion B causes a rise in 2 of he subgroups but a fall int he second?
+This does not at all happen in gene one, where everything is regular.
+
+let's say the rise is like 2. and the fall is 2
+Let's only sidr hte condition: no the frmula here:
+
+Call:
+lm(formula = log2c ~ cond, data = d2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max
+-1.9366 -0.9586  0.1480  0.9595  1.5480
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)
+(Intercept)   8.9962     0.1352   66.54  < 2e-16 ***
+condB         0.6616     0.1912    3.46 0.000752 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 1.047 on 118 degrees of freedom
+Multiple R-squared:  0.09212,   Adjusted R-squared:  0.08442
+F-statistic: 11.97 on 1 and 118 DF,  p-value: 0.0007522
+
+So two of the subgrousp have risen by 2, and the third has fallen by two, So you end up with conditon B being a rise 0f 0.6
+So you can see that things are averged out. The difference is avergaed out.
+
+It's like a farm of chickens and cows, the avergae number of legs is three.
+So there's a distinct problem with one of the subgroups goign in exaclty the opposite direction.
+
+Notice R squared is poor here. It's freely admits the model exaplins litle of the variation.
+
+So let's build in the subgrousp and see what happens:
+
+r$> summary(l20)
+
+Call:
+lm(formula = log2c ~ cond + geno, data = d2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max
+-1.60505 -0.76663  0.03824  0.75705  1.53632
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)
+(Intercept)  8.67979    0.17305  50.157  < 2e-16 ***
+condB        0.66158    0.17305   3.823 0.000214 ***
+genoII       0.96434    0.21194   4.550 1.33e-05 ***
+genoIII     -0.01521    0.21194  -0.072 0.942907
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.9478 on 116 degrees of freedom
+Multiple R-squared:  0.2689,    Adjusted R-squared:   0.25
+F-statistic: 14.22 on 3 and 116 DF,  p-value: 5.926e-08
+
+
+Well the condition effect is the same, because there' no interaction.
+so the subgroup comparison ignores condition and averages the condtion effect,
+so it's a separate analysis, and geno1 and genoIII are almost the same, because the direction in the conditional
+cahnge cancel each other out. genoII however does get a decent coefficient,
+
+R squared is higher ... still not super, but higher.
+
+Let's allow interaciotns:
+
+r$> summary(l2)
+
+Call:
+lm(formula = log2c ~ cond + geno + geno:cond, data = d2)
+
+Residuals:
+     Min       1Q   Median       3Q      Max
+-0.41481 -0.09154 -0.00995  0.12232  0.43421
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)
+(Intercept)    8.06164    0.03740 215.566   <2e-16 ***
+condB          1.89787    0.05289  35.885   <2e-16 ***
+genoII         0.90350    0.05289  17.083   <2e-16 ***
+genoIII        1.90006    0.05289  35.926   <2e-16 ***
+condB:genoII   0.12168    0.07480   1.627    0.107
+condB:genoIII -3.83055    0.07480 -51.214   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.1672 on 114 degrees of freedom
+Multiple R-squared:  0.9776,    Adjusted R-squared:  0.9766
+F-statistic: 996.4 on 5 and 114 DF,  p-value: < 2.2e-16
+
+What is plain here is the massive boost rsquared has got ... yes
+this model is nailing it. CondB hows an increase of 2! 
+
+What;s happening in this model is that the invidua effects are being itemized.
+Cond B is getting it's true ffect I suupose because it's allowed to later say
+"yes but if you move to condition B in subgroups genoIII you'll get a massive 4 slump!
+
+SO you could say, this third model is saying "well cond B will cause a rise of 2, but if you later specifiy
+that's it's genoIII well it gets a slump of 4!
+
+So you can see it as a story line.

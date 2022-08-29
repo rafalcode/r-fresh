@@ -1,4 +1,6 @@
 Remarkable p values
+why this file?
+Go down to the bottom!
 
 
 The programs included with the Debian GNU/Linux system are free software;
@@ -297,3 +299,11 @@ Gene 6 -0.0592  0.50351 -0.34194 -0.286  0.0593 -0.3174
 [5,]  0.029578 -0.003315 -0.010436  0.08355  0.23820  0.09656
 [6,] -0.003121  0.003794 -0.013999  0.11124  0.09656  0.21186
 >
+
+
+I just want to note one thig here
+the Gene 2 is given a considerably higher pvalue than gene 1 despite
+the logFC being higher for it. Now we're slight clutching a straws here
+they both behave almost he same, but Gene1 gets more recognition
+it seems tob e getting penalised for the slightly lowe avg expression.
+Haven;t work that out.
