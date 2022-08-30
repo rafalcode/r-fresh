@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
-# I wanted to expand the desvig1.R include more genes
+# This is an expansion, where extra non DE genes are simulated and added.
 library(ggplot2)
 library(Cairo)
 library(gridExtra)
@@ -24,21 +24,45 @@ plotit0 <- function(d, title) {
     xlab("condition") + ylab("log2(counts+1)") + ggtitle(title)
 }
 
-nrcou <- 6 # was: npg .. but I interpret: number of replicate counts for each condition-group
+nrcou <- 5 # was: npg .. but I interpret: number of replicate counts for each condition-group
 mu <- 2^c(8,10,9,11,10,11) #rise due to condB in G3 is weaker.
 # Note above mu, the power of two's style! These are six mu's which will help create 6 gene count vectors,
 # one for each condition-group (2 conditions, 3 groups = 6)
-phe <- data.frame(sname = paste0("S", 1:(nrcou*6)),
-                cond = rep(c("A","B"),nrcou*3),
+phe <- data.frame(cond = rep(c("A","B"),nrcou*3),
                 geno = rep(c("I","II","III"),each=2*nrcou))
+rownames(phe) <- paste0("S", 1:(nrcou*6))
 
-counts <- rnbinom(6*nrcou, mu=rep(mu,nrcou), size=1/.01) # new count set based on the modified mu's.
-d2 <- log2(counts + 1)
+# here is the single gene to show DE
+ndeg <- 5 # number of DE genes
+counts <- matrix(rnbinom(6*nrcou*ndeg, mu=rep(mu,nrcou), size=1/.01), nrow=ndeg, byrow=T)
 
-des <- model.matrix(~0+cond, data=phe)
-des <- model.matrix(~0+cond, data=phe)
-fit <- lmFit(counts, des)
+# we'll want another #ng genes to show no DE but just small variations
+ng <- 5000 # new genes
+# OK different genes have very varied counts, these will be our seeds.
+stg <- rnbinom(ng, mu=750, size=0.5)
+# perturb the seed gene counts for condition A (untreated) 
+e <- matrix(rnorm(ng*nrcou*3, sd=.05),nrow=ng) # different sample effect, no subgroup
+e2 <- round(stg+stg*e) # perturbation is added
+# for Cond B, just a bigger perturbation
+f <- matrix(rnorm(ng*nrcou*3, sd=.2),nrow=ng) # condition effect
+e3 <- round(e2+e2*f)
+
+# Now we inteleave e and e3 because condA and CondB are interlevaed with each other.
+# But R is very columns-first oriented ... especially c() so watch it here.
+ee <-rbind(c(t(e2)), c(t(e3))) # fool c() to go row wise.
+em <- matrix(c(ee), ncol=nrcou*6, byrow=T)
+# now add the negligible effect genes to the DE gene.
+# counts2 <- rbind(t(as.matrix(counts)), em)
+counts2 <- rbind(counts, em)
+
+logcou <- log2(counts2 + 1) # because lmFit() wants logs
+
+des <- model.matrix(~0+cond*geno, data=phe)
+colnames(des) <- gsub(":", "_", colnames(des))
+fit <- lmFit(logcou, des)
 cMat <- makeContrasts(condB-condA, levels=des)
-fit <- contrasts.fit(fit, cMat)
-fit <- eBayes(fit)
-tt <- topTable(fit)
+fit2 <- contrasts.fit(fit, cMat)
+fit3 <- eBayes(fit2)
+fit30 <- eBayes(fit)
+tt3 <- topTable(fit3)
+tt30 <- topTable(fit30)
