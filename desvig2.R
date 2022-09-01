@@ -23,9 +23,10 @@ plotit0 <- function(d, title) {
     stat_summary(fun=mean, geom="line", colour="red", size=0.8) + 
     xlab("condition") + ylab("log2(counts+1)") + ggtitle(title)
 }
-
-nrcou <- 5 # was: npg .. but I interpret: number of replicate counts for each condition-group
-mu <- 2^c(8,10,9,11,10,11) #rise due to condB in G3 is weaker.
+set.seed(42)
+nrcou <- 4 # was: npg .. but I interpret: number of replicate counts for each condition-group
+# mu <- 2^c(8,9,9,11,10,12) #rise due to condB in G3 is weaker.
+mu <- c(256,512,512,2048,1024,1536)
 # Note above mu, the power of two's style! These are six mu's which will help create 6 gene count vectors,
 # one for each condition-group (2 conditions, 3 groups = 6)
 phe <- data.frame(cond = rep(c("A","B"),nrcou*3),
@@ -33,19 +34,25 @@ phe <- data.frame(cond = rep(c("A","B"),nrcou*3),
 rownames(phe) <- paste0("S", 1:(nrcou*6))
 
 # here is the single gene to show DE
-ndeg <- 5 # number of DE genes
-counts <- matrix(rnbinom(6*nrcou*ndeg, mu=rep(mu,nrcou), size=1/.01), nrow=ndeg, byrow=T)
+ndeg <- 3 # number of DE genes
+# we'll need to modify the mu vector 
+mu2 <- matrix(mu, byrow=T, ncol=2)
+mu3 <- mu2 %x% rep(1, nrcou) # Kronecker to the rescue!
+mu4 <- c(t(mu3))
+counts <- matrix(rnbinom(6*nrcou*ndeg, mu=mu4, size=1/.01), nrow=ndeg, byrow=T)
 
 # we'll want another #ng genes to show no DE but just small variations
-ng <- 5000 # new genes
+ng <- 570000 # new genes
 # OK different genes have very varied counts, these will be our seeds.
-stg <- rnbinom(ng, mu=750, size=0.5)
+stg <- rnbinom(ng, mu=750, size=1)
 # perturb the seed gene counts for condition A (untreated) 
 e <- matrix(rnorm(ng*nrcou*3, sd=.05),nrow=ng) # different sample effect, no subgroup
 e2 <- round(stg+stg*e) # perturbation is added
 # for Cond B, just a bigger perturbation
 f <- matrix(rnorm(ng*nrcou*3, sd=.2),nrow=ng) # condition effect
 e3 <- round(e2+e2*f)
+# note this approach will make some low coutns may be experience big changes, so that they 
+# might occasionally even rival the true DEG's!
 
 # Now we inteleave e and e3 because condA and CondB are interlevaed with each other.
 # But R is very columns-first oriented ... especially c() so watch it here.
@@ -57,12 +64,26 @@ counts2 <- rbind(counts, em)
 
 logcou <- log2(counts2 + 1) # because lmFit() wants logs
 
-des <- model.matrix(~0+cond*geno, data=phe)
+# if you allow intercept (i.e. no ~0) you will get a logFC columns.
+# if you don't, it appears it won't calculate difference for you.
+des0 <- model.matrix(~cond*geno, data=phe)
+fit0 <- lmFit(logcou, des0)
+fit0 <- eBayes(fit0)
+tt00 <- topTable(fit0)
+tt01 <- topTable(fit0, coef=2)
+tt02 <- topTable(fit0, coef=5)
+tt03 <- topTable(fit0, coef=6)
+
+# other designs
+des <- model.matrix(~cond*geno, data=phe)
 colnames(des) <- gsub(":", "_", colnames(des))
 fit <- lmFit(logcou, des)
-cMat <- makeContrasts(condB-condA, levels=des)
+
+# Issue about Intercept being in bracked in the fit$coeeficients:
+# colnames(fit$coefficients) <- gsub("[()]", "", colnames(colnames(fit$coefficients)))
+cMat <- makeContrasts(condB_genoII - condB_genoIII, levels=des)
 fit2 <- contrasts.fit(fit, cMat)
 fit3 <- eBayes(fit2)
-fit30 <- eBayes(fit)
-tt3 <- topTable(fit3)
-tt30 <- topTable(fit30)
+# fit30 <- eBayes(fit3)
+tt3 <- topTable(fit3, coef=1)
+# tt30 <- topTable(fit30)
