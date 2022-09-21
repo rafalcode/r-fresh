@@ -1,0 +1,26 @@
+#!/usr/bin/env Rscript
+# yjunechoe's demysstifying stat in ggplot2 stuff.
+library(ggplot2)
+library(Cairo)
+library(palmerpenguins)
+
+data(penguins)
+# r$> str(penguins)
+# tibble [344 × 8] (S3: tbl_df/tbl/data.frame)
+#  $ species          : Factor w/ 3 levels "Adelie","Chinstrap",..: 1 1 1 1 1 1 1 1 1 1 ...
+#  $ island           : Factor w/ 3 levels "Biscoe","Dream",..: 3 3 3 3 3 3 3 3 3 3 ...
+#  $ bill_length_mm   : num [1:344] 39.1 39.5 40.3 NA 36.7 39.3 38.9 39.2 34.1 42 ...
+#  $ bill_depth_mm    : num [1:344] 18.7 17.4 18 NA 19.3 20.6 17.8 19.6 18.1 20.2 ...
+#  $ flipper_length_mm: int [1:344] 181 186 195 NA 193 190 181 195 193 190 ...
+#  $ body_mass_g      : int [1:344] 3750 3800 3250 NA 3450 3650 3625 4675 3475 4250 ...
+#  $ sex              : Factor w/ 2 levels "female","male": 2 1 1 NA 1 2 1 2 NA NA ...
+#  $ year             : int [1:344] 2007 2007 2007 2007 2007 2007 2007 2007 2007 2007 ...
+
+CairoPNG("june0.png", 800, 800)
+# ggplot(data = penguins, mapping = aes(x = body_mass_g)) + geom_histogram()
+# equivalent of above is:
+# ggplot(penguins, aes(x = body_mass_g)) + geom_histogram()
+# and actually this two will work.
+# ggplot(penguins) + geom_histogram(aes(x = body_mass_g))
+ggplot(penguins, aes(group, height)) + stat_summary()
+dev.off()
