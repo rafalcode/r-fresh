@@ -30,3 +30,8 @@ Printing out a beta distribution, ran into a few fundamental problems here.
 
 # desvig0.R
 Simple 2 genes interaction example from the DESeq2 vignette.
+
+# tracol.R
+grDevices:color() will get the list of 600 or R colors which actually have names.
+it's handy until you want opacity, named colors won;t do that, you need a function
+for it ... here it is.
