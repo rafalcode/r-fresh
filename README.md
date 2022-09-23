@@ -35,3 +35,6 @@ Simple 2 genes interaction example from the DESeq2 vignette.
 grDevices:color() will get the list of 600 or R colors which actually have names.
 it's handy until you want opacity, named colors won;t do that, you need a function
 for it ... here it is.
+
+# lintwo.R and lintw2.R
+Diff expression of one gene, though more an exercise in ggplot.
