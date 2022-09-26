@@ -38,3 +38,7 @@ for it ... here it is.
 
 # lintwo.R and lintw2.R
 Diff expression of one gene, though more an exercise in ggplot.
+
+# tangheat.R and tangheat2.R
+Using the pheatmap package because it seems to be well-known for its annotation abilities.
+It does have limitations, the legend positions area bit hard-coded.

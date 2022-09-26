@@ -13,5 +13,5 @@ data <- read.delim(example_file, header=T, row.names="gene")
 data_subset <- as.matrix(data[rowSums(data)>50000,])
 
 CairoPNG("tang0.png", 800, 800)
-pheatmap(data_subset, border=NA)
+pheatmap(data_subset, border=NA) # he has borders, but this is the way you get rid of them.
 dev.off()
