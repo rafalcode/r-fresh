@@ -1,16 +1,19 @@
+library(NMF)
 data(esGolub)
 gol <- esGolub[1:200,]
 # remove the uneeded variable 'Sample' from the phenotypic data
 esGolub$Sample <- NULL
 
 # default NMF algorithm
-res <- nmf(esGolub, 3) # 3 is number of columns/rank for W, the feature/basis matrix
+saynf <- 3 # "Say, number of features"! this is something we set based on the desire (founded or not) of having this number of features.
+res <- nmf(esGolub, saynf) # 3 is number of columns/rank for W, the feature/basis matrix
 
 # is done using the default algorithm and is seeded by the default seeding methods. These defaults are set in the package specific options ’default.algorithm’ and ’default.seed’ respectively.
 
 # Handling the result
 # inspect res, brunet is the default algo.
 W <- fit(res)
+stop("OM!")
 ## <Object of class:NMFstd>
 ## features: 200
 ## basis/rank: 3
@@ -119,9 +122,8 @@ resns <- nmf(esGolub, 3, 'ns', theta=0.7)
 ## samples: 38
 ## theta: 0.7
 # Or to use the PE-NMF algorithm from (Zhang2008):
-if(requireNamespace("Biobase", quietly=TRUE)){
 # using the PE-NMF algorithm with parameters alpha=0.01, beta=1
-reszh <- nmf(esGolub, 3, 'pe', alpha=0.01, beta=1)
+reszh <- nmf(esGolub, saynf, 'pe', alpha=0.01, beta=1)
 
 # Custom algorithms also
 # stop here. the vignette has more.
