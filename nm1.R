@@ -1,18 +1,21 @@
 library(NMF)
-data(esGolub)
+data(esGolub) # 5K "featurenames" and 38 samples. run str(0 on the exprs() of this to see.
 gol <- esGolub[1:200,]
 # remove the uneeded variable 'Sample' from the phenotypic data
 esGolub$Sample <- NULL
 
 # default NMF algorithm
-saynf <- 3 # "Say, number of features"! this is something we set based on the desire (founded or not) of having this number of features.
-res <- nmf(esGolub, saynf) # 3 is number of columns/rank for W, the feature/basis matrix
+saynf <- 3 # "Say, number of features"! this is something we set based on the desire (founded or not) of having this number of features. Techncial terms for it is factorization rank.
+res <- nmf(gol, saynf) # 3 is number of columns/rank for W, the feature/basis matrix
+# you get a NMFfit structure here which has W and H 
 
 # is done using the default algorithm and is seeded by the default seeding methods. These defaults are set in the package specific options ’default.algorithm’ and ’default.seed’ respectively.
 
 # Handling the result
 # inspect res, brunet is the default algo.
-W <- fit(res)
+W <- fit(res) # one guesses this is over-ridden function, you get an NMFstd from it.
+# but note that it's called W, so it looks as if it's the first matrix i.e. basis matrix, in the NMF op.
+# unfort, head() doesn't work on it which is disappointing.
 stop("OM!")
 ## <Object of class:NMFstd>
 ## features: 200
@@ -22,17 +25,17 @@ stop("OM!")
 # I think what he means here is a recontruction of the  original matrix as NMF s only an approximation
 # actually W %*% H should give you the same thing.
 
-# V.hat <- fitted(res)
+V.hat <- fitted(res)
 # you can inspect that.
 
 # You can str() and summary(), and more detail if you specify target
-summary(res, target=esGolub)
+summary(res, target=gol)
 
 # If there is some prior knowledge of classes present in the data, some other measures about
 # the unsupervised clustering’s performance are computed (purity, entropy, . . . ). Here we use the
 # phenotypic variable Cell found in the Golub dataset, that gives the samples’ cell-types (it is a
 # factor with levels: T-cell, B-cell or NA):
-summary(res, class=esGolub$Cell)
+summary(res, class=gol$Cell)
 
 # The basis matrix (i.e. matrix W or the metagenes) and the mixture coefficient matrix (i.e
 # matrix H or the metagene expression profiles) are retrieved using methods basis and coef respectively:
@@ -48,7 +51,7 @@ dim(h)
 # on features and samples (separately or simultaneously). The result is a NMF object composed of
 # the selected rows and/or columns:
 
-# keep only the first 10 features
+# keep only the first 10 featuretr
 res.subset <- res[1:10,]
 # class(res.subset)
 # dim(res.subset)
