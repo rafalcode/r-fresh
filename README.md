@@ -45,3 +45,6 @@ It does have limitations, the legend positions area bit hard-coded.
 
 # ddm
 degenerate matrices.
+
+# sca0.R and sca1.R
+experiments with the scale() function.
