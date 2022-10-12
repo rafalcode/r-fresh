@@ -48,3 +48,6 @@ degenerate matrices.
 
 # sca0.R and sca1.R
 experiments with the scale() function.
+
+# bar2.R
+What geom_bar, it may reorder
