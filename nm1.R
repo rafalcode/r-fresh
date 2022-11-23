@@ -5,7 +5,7 @@ gol <- esGolub[1:200,]
 esGolub$Sample <- NULL
 
 # default NMF algorithm
-saynf <- 3 # "Say, number of features"! this is something we set based on the desire (founded or not) of having this number of features. Techncial terms for it is factorization rank.
+saynf <- 3 # "Say, number of features"! Or, rank. this is something we set based on the desire (founded or not) of having this number of features. Technical term for it is factorization rank.
 res <- nmf(gol, saynf) # 3 is number of columns/rank for W, the feature/basis matrix
 # you get a NMFfit structure here which has W and H 
 
