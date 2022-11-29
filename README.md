@@ -51,3 +51,7 @@ experiments with the scale() function.
 
 # bar2.R
 What geom_bar, it may reorder
+
+# chunks.R
+I've often done this in C, somehow, nto for R.
+It's actually dead easy, but it's also easy to get mixed up, it's just a basic chunkifier.
