@@ -15,10 +15,12 @@ a2 <- as.integer(args[2])
 nfchunks <- floor(a1/a2) # number of full chunks.
 remchunk <- a1%%a2 # the size of the remainder chunk
 
-for(i in 1:nfchunks) {
-    for(j in 1:a2) {
-        jj <- (i-1)*a2+j
-        cat("chunk:", i, "/value:",jj,"\n")
+if(nfchunks) {
+    for(i in 1:nfchunks) {
+        for(j in 1:a2) {
+            jj <- (i-1)*a2+j
+            cat("chunk:", i, "/value:",jj,"\n")
+        }
     }
 }
 
