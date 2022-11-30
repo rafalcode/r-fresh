@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 # this script does what?
+library(Polychrome)
 library(ggplot2)
 library(Cairo)
-
 
 # Examples of meth beta values
 # alternating intensities Bx (odd idx) BrM (even)
@@ -15,17 +15,36 @@ c2 <- c(0.37519869, 0.36073997, 0.63703805, 0.29571714, 0.79699470, 0.56506777, 
 c3 <- c(0.6308576, 0.7854971, 0.5044553, 0.6522234, 0.3659531, 0.3672468, 0.3604295, 0.7106267, 0.5513593, 0.5806608, 0.5243173, 0.6659574, 0.4585073, 0.5550123, 0.5875399, 0.6665482, 0.5138795, 0.4956739, 0.5448193, 0.5383910, 0.3628784, 0.4784778, 0.4328459, 0.5613406, 0.6516721, 0.5529366, 0.4590554, 0.3905431, 0.5629083, 0.6837479, 0.5676619, 0.4738731, 0.6158811, 0.5860428)
 # means "0.5114718", "0.5732235")
 
+c1 <- c1[7:12]
+c2 <- c2[7:12]
+c3 <- c3[7:12]
+
+tlab <-c("first", "sec", "third")
+
 ll <- length(c1)
 c1d <- c1[seq(2,ll,2)] - c1[seq(1,ll,2)]
 c2d <- c2[seq(2,ll,2)] - c2[seq(1,ll,2)]
 c3d <- c3[seq(2,ll,2)] - c3[seq(1,ll,2)]
 ll2 <- as.integer(ll/2)
+pal2 <- alphabet.colors(ll2)
+names(pal2) <- NULL # this is ultra important ... scale_fill_manual's major quirk is gettign confused by names stringvectors
+# quickly set alpha
+pal2 <- paste0(pal2, "99")
+mypal <- c("#25739155", "#dd22aa55", "#11ee6655")
 
-df <- data.frame(Diffs=c(c1d,c2d,c3d), Cg=rep(paste0("cg", 1:3), each=ll2), Pairs= rep(paste0("P", 1:ll2), 3))
-
+df <- data.frame(Diffs=round(c(c1d,c2d,c3d), digits=3), Cg=factor(rep(paste0("cg", 1:3), each=ll2)), Pairs=factor(rep(paste0("P", 1:ll2), 3)))
 
 CairoPNG("ctri.png", 800, 800)
-gg <- ggplot(df, aes(x=Cg, y=Diffs)) + 
-      geom_bar(stat="identity")
+gg <- ggplot(df, aes(x=Cg, y=Diffs, fill=Pairs, label=Diffs)) + 
+      # geom_bar(stat="identity", aes(fill=pal2)) +
+      # geom_bar(stat="identity") +
+      geom_col() +
+      scale_fill_manual(values=pal2) +
+      geom_text(size=3, position = position_stack(vjust = 0.5)) +
+      geom_text(tlab, aes(label=tlab), position=position_dodge(width=0.9), vjust=-0.25) +
+      # scale_fill_manual(values=c("#25739155", "#dd22aa55", "#11ee6655")) +
+      geom_hline(yintercept=0) +
+      theme_light() +
+      theme(axis.line.y=element_line())
 show(gg)
 dev.off()
