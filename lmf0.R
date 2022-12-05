@@ -13,7 +13,7 @@ rownames(y) <- paste("Gene",1:100)
 y[1:2,4:6] <- y[1:2,4:6] + 2
 design <- cbind(Grp1=1,Grp2vs1=c(0,0,0,1,1,1))
 options(digits=3)
-
+stop("o!")
 # Ordinary fit
 fit <- lmFit(y,design)
 ebfit <- eBayes(fit) # "moderation" invokes some Bayesianism via informed prior for taming purposes.

@@ -27,6 +27,7 @@ of a function within a function with a <<- local assignment.
 
 # becu.R
 Printing out a beta distribution, ran into a few fundamental problems here.
+uses dbeta(). ./becu 5 2 is the right biased one, and 2 5 is the left-sided one.
 
 # desvig0.R
 Simple 2 genes interaction example from the DESeq2 vignette.

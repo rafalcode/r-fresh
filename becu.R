@@ -8,7 +8,7 @@ numargs <- length(args)
 enumargs <- 2 # expected numargs
 if(numargs != enumargs) {
     print("This script generates a beta distribution density curve, needing two arguments, shape1 and shape2")
-    warning("Stopping right here")
+    stop("Stopping right here")
 }
 
 sh1 <- as.numeric(args[1])
