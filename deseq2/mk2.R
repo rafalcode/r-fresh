@@ -19,12 +19,13 @@ library(DESeq2)
 # betaSD actually by default (and this is risible) ther is no diff exp! Wow it takes some guts to set that as default.
 
 # the first two variables are obvious.
-ngenes <- 1000
-nsamples <- 12
+ngenes <- 16
+nsamples <- 4
 # betaSD they say is the standard deviation for non-intercept betas, i.e. beta ~ N(0,betaSD)
 # he admits intercept is a "beta" betazero.
 # and the betas are set via that draw from the normal with that set SD
 bSD <- 2 # something like 2 wil give you say 36 genes being over 4 or -4 diffexp.
+bSD2 <- 4 # patient
 iM <- 4 #intercept meangenes
 iSD <- 2
 ourfunc <- function(x){4/x+.1} # for dispMeanRel: whatever that means.
@@ -36,14 +37,15 @@ sF <- rep(1, nsamples)
 # so here's some "leading code"
 b0 <- rnorm(ngenes, iM, iSD)
 b1 <- rnorm(ngenes, 0, bSD) # this actually the b1 coefficient
-be <- cbind(b0, b1)
+b2 <- rnorm(ngenes, 0, bSD2) # this actually the b1 coefficient
+be <- cbind(b0, b1, b2)
 # so out of this, you can guess we have betazero (the intercept) and beta1, the coeffcient to the chnage of conda to condb.
 dispvec <- 2^(be[, 1])
 dispr <- ourfunc(dispvec)
 
 colDats <- DataFrame(cond = factor(rep(c("A", "B"), 
-        times = c(ceiling(nsamples/2), floor(nsamples/2)))))
-x <- model.matrix(~colDats$cond)
+        times = 2)), pat=rep(c("P1", "P2"), each=2))
+x <- model.matrix( ~ colDats$cond + colDats$pat)
 
 # the following is actually the linear quation
 # x= b_0 + b_1 * CondB , so the intercept and second term are "mixed"
