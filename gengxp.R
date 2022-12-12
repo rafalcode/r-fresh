@@ -11,10 +11,13 @@ c1m <- 8 # group 1 mean
 c1sd <- 1 # group 1 sd
 
 d <- matrix(rnorm(ng*ns, mean=c1m, sd=c1sd), byrow=T, nrow=ns)
+
+# perturbations: do it to just two of the genes:
 g2pu <- 3 # g2p gene to perturb upwards
 g2pd <- 9 # g2p gene to perturb downwards
 d[(hns+1):ns, g2pu] <- d[(hns+1):ns, g2pu] +8
 d[(hns+1):ns, g2pd] <- d[(hns+1):ns, g2pd] -2
+
 m1 <- c()
 m2 <- c()
 for(i in 1:ng) {

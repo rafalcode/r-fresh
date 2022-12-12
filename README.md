@@ -56,3 +56,8 @@ What geom_bar, it may reorder
 # chunks.R
 I've often done this in C, somehow, nto for R.
 It's actually dead easy, but it's also easy to get mixed up, it's just a basic chunkifier.
+
+# sdgene.R
+Linear models often add an extra term (multiplied by a coeeficient), but how much does that affect variation?
+Well only incremental is would seem. A single effect with a higher SD, say 4, would have a much bigger effect than 4
+additions of sd=1 rnorm.
