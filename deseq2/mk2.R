@@ -12,6 +12,7 @@
 # makes sense too.
 
 library(DESeq2)
+library(Cairo)
 
 # here's the canonical call, which al possible option
 # n=ngenes (rows)
@@ -44,7 +45,7 @@ dispvec <- 2^(be[, 1])
 dispr <- ourfunc(dispvec)
 
 colDats <- DataFrame(cond = factor(rep(c("A", "B"), 
-        times = 2)), pat=rep(c("P1", "P2"), each=2))
+        times = 2)), pat=factor(rep(c("P1", "P2"), each=2)))
 x <- model.matrix( ~ colDats$cond + colDats$pat)
 
 # the following is actually the linear quation
@@ -59,3 +60,10 @@ couMat <- matrix(rnbinom(nsamples * ngenes, mu = mu, size = 1/dispr), ncol = nsa
 # mu is average number of failues to get size number of successes (which is usuall the set constraint)
 # as you can also see, it integerises everything too.
 # Unusualy though size is only ngenes long .. 
+dds <- DESeqDataSetFromMatrix(couMat, colData=colDats, design=~cond)
+dds2 <- DESeq(dds)
+res <- results(dds2)
+
+CairoPNG("mk2pca.png", 800, 800)
+plotPCA(dds2)
+dev.off()
