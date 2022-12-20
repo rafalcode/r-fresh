@@ -21,7 +21,8 @@ library(Cairo)
 
 # the first two variables are obvious.
 ngenes <- 16
-nsamples <- 4
+nsamples <- 8
+hnsa <- nsamples/2 # half nsamples (for when number of conditions =2)
 # betaSD they say is the standard deviation for non-intercept betas, i.e. beta ~ N(0,betaSD)
 # he admits intercept is a "beta" betazero.
 # and the betas are set via that draw from the normal with that set SD
@@ -44,9 +45,11 @@ be <- cbind(b0, b1, b2)
 dispvec <- 2^(be[, 1])
 dispr <- ourfunc(dispvec)
 
-colDats <- DataFrame(cond = factor(rep(c("A", "B"), 
-        times = 2)), pat=factor(rep(c("P1", "P2"), each=2)))
-x <- model.matrix( ~ colDats$cond + colDats$pat)
+# colDats <- DataFrame(cond = factor(rep(c("A", "B"), times = hnsa)), pat=factor(rep(c("P1", "P2"), each=hnsa)))
+colDats <- DataFrame(cond = factor(rep(c("A", "B"), times = hnsa)))
+rownames(colDats) <- paste0("S", 1:nsamples)
+# x <- model.matrix( ~ colDats$cond + colDats$pat)
+x <- model.matrix( ~ colDats$cond)
 
 # the following is actually the linear quation
 # x= b_0 + b_1 * CondB , so the intercept and second term are "mixed"
@@ -61,9 +64,14 @@ couMat <- matrix(rnbinom(nsamples * ngenes, mu = mu, size = 1/dispr), ncol = nsa
 # as you can also see, it integerises everything too.
 # Unusualy though size is only ngenes long .. 
 dds <- DESeqDataSetFromMatrix(couMat, colData=colDats, design=~cond)
-dds2 <- DESeq(dds)
-res <- results(dds2)
 
-CairoPNG("mk2pca.png", 800, 800)
-plotPCA(dds2)
-dev.off()
+# To be able to use the PCA plot function. we need to transform via:
+# vsd <- varianceStabilizingTransformation(dds)
+# no I don't think so, but the rlog() transformation might workq
+
+rld <- rlog(dds)
+# CairoPNG("mk2pca.png", 800, 800)
+# plotPCA(rld)
+# dev.off()
+# dds <- DESeq(dds)
+# res <- results(dds)
