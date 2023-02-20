@@ -61,3 +61,7 @@ It's actually dead easy, but it's also easy to get mixed up, it's just a basic c
 Linear models often add an extra term (multiplied by a coeeficient), but how much does that affect variation?
 Well only incremental is would seem. A single effect with a higher SD, say 4, would have a much bigger effect than 4
 additions of sd=1 rnorm.
+
+# R colors for C
+there are 657 of these, rcol1.R was used to generate most of rcolp.h (which means rcolor proportional RGB vlaues givien in [0,1] value format). I then editted th 
+

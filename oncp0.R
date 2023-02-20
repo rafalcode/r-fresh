@@ -16,7 +16,7 @@ mat <-  mat[, -ncol(mat)]
 # actually the above two are just quick ways to get rid of first and last cols.
 
 mat <- t(as.matrix(mat))
-# genes are rows now, and cases are columns
+# genes are rows now, and cases are columns .. that's the oncoprint style
 
 col = c("HOMDEL" = "blue", "AMP" = "red", "MUT" = "#008000")
 alter_fun = list(
