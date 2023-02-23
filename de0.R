@@ -7,6 +7,7 @@ pasCts <- system.file("extdata", "pasilla_gene_counts.tsv", package="pasilla", m
 pasAnno <- system.file("extdata", "pasilla_sample_annotation.csv", package="pasilla", mustWork=TRUE)
 
 cts <- as.matrix(read.csv(pasCts,sep="\t",row.names="gene_id"))
+# cts[2,1] <- 140.48 # this will make DESDS() cough!
 coldata <- read.csv(pasAnno, row.names=1)
 
 coldata <- coldata[,c("condition","type")]
@@ -19,7 +20,6 @@ rownames(coldata) <- sub("fb", "", rownames(coldata))
 ## [1] TRUE
 # all(rownames(coldata) == colnames(cts))
 ## [1] FALSE
-
 cts <- cts[, rownames(coldata)]
 # another check
 # all(rownames(coldata) == colnames(cts))

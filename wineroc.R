@@ -2,7 +2,7 @@
 # from kaggle: https://www.kaggle.com/code/milesh1/receiver-operating-characteristic-roc-curve-in-r/notebook
 # it seems you can get ROC's from randomForests as well.
 # doesn't seem overly concerned with ROCs and deciding thresholds.
-# Note this is RED vinho verde, which is not interesting at all.
+# Note this is RED vinho verde, which is not interesting at all. WHo cares though, this is abou tdata.
 library(Cairo)
 library(randomForest)
 library(pROC)
