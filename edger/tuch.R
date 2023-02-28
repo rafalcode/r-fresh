@@ -1,6 +1,18 @@
 # tuch.R aka
 # this is edgeR's example 4.1. in usersguide.
-# actaully its matched pairs Oral Tumours (prob T) and Normal tissue (N).
+# actaully its matched pairs Oral Tumours (prob T) and Normal tissue (N). Just three patients mind you.
+#
+# paper  reference:
+# Tumor Transcriptome Sequencing Reveals Allelic Expression Imbalances Associated with Copy Number Alterations
+# Brian B. Tuch1., Rebecca R. Laborde2., Xing Xu1, Jian Gu3, Christina B. Chung1, Cinna K. Monighetti1,
+# Sarah J. Stanley1, Kerry D. Olsen4, Jan L. Kasperbauer4, Eric J. Moore4, Adam J. Broomer1, Ruoying Tan1,
+# Pius M. Brzoska1, Matthew W. Muller1, Asim S. Siddiqui1, Yan W. Asmann5, Yongming Sun1, Scott
+# Kuersten3, Melissa A. Barker1, Francisco M. De La Vega1*, David I. Smith2*
+# 1 Life Technologies Inc., Foster City, California, United States of America, 2 Division of Experimental Pathology, Department of Laboratory Medicine and Pathology, Mayo
+# Clinic, Rochester, Minnesota, United States of America, 3 Life Technologies Inc., Austin, Texas, United States of America, 4 Department of Otorhinolaryngology, Mayo
+# Clinic, Rochester, Minnesota, United States of America, 5 Division of Biomedical Statistics and Informatics, Department of Health Sciences Research, Mayo Clinic, Rochester,
+# Minnesota, United States of America
+
 library(edgeR)
 library(org.Hs.eg.db)
 
@@ -36,7 +48,7 @@ d <- duplicated(y$genes$Symbol) # returns logical vector.
 y <- y[!d,] # this has major effect o the number of genes. Down to 10510.
 
 # Why were there so many duplicates?
-# well in fact the RefSeqIDs are differentA
+# well in fact the RefSeqIDs are different
 # I used example of TTN and there are small differences only between them.
 # However one looks very different with 312 exons instead of the usual 191/2, but actually one has 46 exons
 # though that's quite a bizarre one (TTN is titin).

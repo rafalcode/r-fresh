@@ -2,6 +2,8 @@
 # http://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#differential-expression-analysis
 library(DESeq2)
 library(pasilla)
+library(Cairo)
+library(ggplot2)
 
 pasCts <- system.file("extdata", "pasilla_gene_counts.tsv", package="pasilla", mustWork=TRUE)
 pasAnno <- system.file("extdata", "pasilla_sample_annotation.csv", package="pasilla", mustWork=TRUE)
@@ -25,3 +27,9 @@ cts <- cts[, rownames(coldata)]
 # all(rownames(coldata) == colnames(cts))
 ## [1] TRUE
 dds <- DESeqDataSetFromMatrix(countData = cts, colData = coldata, design = ~ condition)
+dds <- DESeq(dds)
+
+CairoPNG("dispests.png", 800, 800)
+pp <- plotDispEsts(dds)
+show(pp)
+dev.off()
