@@ -1,0 +1,10017 @@
+library(edgeR)
+rawdata <- read.delim("TableS1.txt", check.names=FALSE, stringsAsFactors=FALSE)
+y <- DGEList(counts=rawdata[,4:9], genes=rawdata[,1:3])
+33N 33T
+
+51N
+
+NM_182502 TMPRSS11B
+NM_003280
+TNNC1
+
+RefSeqID
+
+10 2592
+
+3
+
+7805 321
+
+3372
+
+9
+
+6 1684
+
+0
+
+1787
+
+4894
+
+559
+
+NM_152381
+NM_022438
+
+XIRP2
+
+10 9915 15 10396
+
+MAL
+
+3 2496
+
+2
+
+3585 239
+
+1596
+
+5 NM_001100112
+6
+NM_017534
+
+MYH2
+
+40 4389
+
+7
+
+7944
+
+16
+
+9262 1818
+
+MYH2
+
+40 4402
+
+7
+
+7943
+
+16
+
+9244 1815
+
+1
+2
+3
+4
+
+Symbol NbrOfExons
+
+8N 8T
+
+7
+
+48 23309 7181
+
+For easy manipulation, we put the data into a DGEList object:
+
+44
+
+51T
+
+7
+
+edgeR User’s Guide
+
+> library(edgeR)
+> y <- DGEList(counts=rawdata[,4:9], genes=rawdata[,1:3])
+
+4.1.3 Annotation
+The study by Tuch et al. [40] was undertaken a few years ago, so not all of the RefSeq IDs
+provided by match RefSeq IDs currently in use. We retain only those transcripts with IDs in
+the current NCBI annotation, which is provided by the org.HS.eg.db package:
+> library(org.Hs.eg.db)
+> idfound <- y$genes$RefSeqID %in% mappedRkeys(org.Hs.egREFSEQ)
+> y <- y[idfound,]
+> dim(y)
+[1] 15537
+
+6
+
+We add Entrez Gene IDs to the annotation:
+> egREFSEQ <- toTable(org.Hs.egREFSEQ)
+> head(egREFSEQ)
+gene_id
+
+accession
+
+1
+
+1
+
+2
+
+1
+
+NM_130786
+NP_570602
+
+3
+
+2
+
+NM_000014
+
+4
+5
+
+2 NM_001347423
+2 NM_001347424
+
+6
+
+2 NM_001347425
+
+> m <- match(y$genes$RefSeqID, egREFSEQ$accession)
+> y$genes$EntrezGene <- egREFSEQ$gene_id[m]
+
+Now use the Entrez Gene IDs to update the gene symbols:
+> egSYMBOL <- toTable(org.Hs.egSYMBOL)
+> head(egSYMBOL)
+gene_id symbol
+1
+
+1
+
+2
+
+2
+
+A1BG
+A2M
+
+3
+
+3
+
+A2MP1
+
+4
+
+9
+
+NAT1
+
+5
+
+10
+
+NAT2
+
+6
+
+11
+
+NATP
+
+> m <- match(y$genes$EntrezGene, egSYMBOL$gene_id)
+> y$genes$Symbol <- egSYMBOL$symbol[m]
+> head(y$genes)
+RefSeqID
+1
+2
+3
+4
+
+Symbol NbrOfExons EntrezGene
+
+NM_182502 TMPRSS11B
+NM_003280
+TNNC1
+
+10
+6
+
+7134
+
+NM_152381
+NM_022438
+
+XIRP2
+
+10
+
+129446
+
+MAL
+
+3
+
+4118
+
+132724
+
+45
+
+edgeR User’s Guide
+
+5 NM_001100112
+6
+NM_017534
+
+MYH2
+
+40
+
+4620
+
+MYH2
+
+40
+
+4620
+
+4.1.4 Filtering and normalization
+Different RefSeq transcripts for the same gene symbol count predominantly the same reads.
+So we keep one transcript for each gene symbol. We choose the transcript with highest
+overall count:
+> o <- order(rowSums(y$counts), decreasing=TRUE)
+> y <- y[o,]
+> d <- duplicated(y$genes$Symbol)
+> y <- y[!d,]
+> nrow(y)
+[1] 10510
+
+Normally we would also filter lowly expressed genes. For this data, all transcripts already
+have at least 50 reads for all samples of at least one of the tissues types.
+Recompute the library sizes:
+> y$samples$lib.size <- colSums(y$counts)
+
+Use Entrez Gene IDs as row names:
+> rownames(y$counts) <- rownames(y$genes) <- y$genes$EntrezGene
+> y$genes$EntrezGene <- NULL
+
+TMM normalization is applied to this dataset to account for compositional difference between
+the libraries.
+> y <- calcNormFactors(y)
+> y$samples
+group lib.size norm.factors
+8N
+
+1
+
+7987866
+
+1.146
+
+8T
+
+1
+
+7370229
+
+1.086
+
+33N
+
+1 15752778
+
+0.672
+
+33T
+
+1 14042221
+
+0.973
+
+51N
+
+1 21536637
+
+1.032
+
+51T
+
+1 15191761
+
+1.190
+
+4.1.5 Data exploration
+The first step of an analysis should be to examine the samples for outliers and for other
+relationships. The function plotMDS produces a plot in which distances between samples
+correspond to leading biological coefficient of variation (BCV) between those samples:
+> plotMDS(y)
+
+46
+
+1.0
+
+1.5
+
+51T
+
+0.0
+
+0.5
+
+51N
+
+8T
+8N
+
+−1.0
+
+Leading logFC dim 2 (18%)
+
+2.0
+
+edgeR User’s Guide
+
+33T
+−3
+
+−2
+
+33N
+−1
+
+0
+
+1
+
+2
+
+Leading logFC dim 1 (56%)
+
+In the plot, dimension 1 separates the tumor from the normal samples, while dimension 2
+roughly corresponds to patient number. This confirms the paired nature of the samples. The
+tumor samples appear more heterogeneous than the normal samples.
+
+4.1.6 The design matrix
+Before we fit negative binomial GLMs, we need to define our design matrix based on the
+experimental design. Here we want to test for differential expression between tumour and
+normal tissues within patients, i.e. adjusting for differences between patients. In statistical
+terms, this is an additive linear model with patient as the blocking factor:
+> Patient <- factor(c(8,8,33,33,51,51))
+> Tissue <- factor(c("N","T","N","T","N","T"))
+> data.frame(Sample=colnames(y),Patient,Tissue)
+Sample Patient Tissue
+1
+
+8N
+
+8
+
+N
+
+2
+
+8T
+
+8
+
+T
+
+3
+
+33N
+
+33
+
+N
+
+4
+
+33T
+
+33
+
+T
+
+5
+
+51N
+
+51
+
+N
+
+6
+
+51T
+
+51
+
+T
+
+> design <- model.matrix(~Patient+Tissue)
+> rownames(design) <- colnames(y)
+> design
+(Intercept) Patient33 Patient51 TissueT
+8N
+
+1
+
+0
+
+0
+
+0
+
+8T
+
+1
+
+0
+
+0
+
+1
+
+33N
+
+1
+
+1
+
+0
+
+0
+
+33T
+
+1
+
+1
+
+0
+
+1
+
+51N
+
+1
+
+0
+
+1
+
+0
+
+51T
+
+1
+
+0
+
+1
+
+1
+
+47
+
+edgeR User’s Guide
+
+attr(,"assign")
+[1] 0 1 1 2
+attr(,"contrasts")
+attr(,"contrasts")$Patient
+[1] "contr.treatment"
+attr(,"contrasts")$Tissue
+[1] "contr.treatment"
+
+This sort of additive model is appropriate for paired designs, or experiments with batch effects.
+
+4.1.7 Estimating the dispersion
+We estimate the NB dispersion for the dataset.
+> y <- estimateDisp(y, design, robust=TRUE)
+> y$common.dispersion
+[1] 0.159
+
+The square root of the common dispersion gives the coefficient of variation of biological
+variation. Here the common dispersion is found to be 0.159, so the coefficient of biological
+variation is around 0.4.
+The dispersion estimates can be viewed in a BCV plot:
+> plotBCV(y)
+
+4.1.8 Differential expression
+Now proceed to determine differentially expressed genes. Fit genewise glms:
+
+48
+
+edgeR User’s Guide
+
+> fit <- glmFit(y, design)
+
+Conduct likelihood ratio tests for tumour vs normal tissue differences and show the top genes:
+> lrt <- glmLRT(fit)
+> topTags(lrt)
+Coefficient:
+
+TissueT
+
+RefSeqID
+5737
+5744
+3479
+1288
+10351
+5837
+487
+27179
+196374
+83699
+
+Symbol NbrOfExons logFC logCPM
+
+LR
+
+PValue
+
+FDR
+
+NM_001039585
+NM_002820
+
+PTGFR
+PTHLH
+
+4
+
+3.97
+
+6.21 92.1 8.13e-22 4.27e-18
+
+NM_001111283
+NM_033641
+
+IGF1
+
+5 -3.99
+
+5.72 86.5 1.39e-20 4.87e-17
+
+4 -5.18
+
+4.74 98.7 2.97e-23 3.12e-19
+
+COL4A6
+
+45
+
+3.66
+
+5.72 77.5 1.31e-18 3.45e-15
+
+NM_007168
+NM_005609
+
+ABCA8
+
+38 -3.98
+
+4.94 75.9 2.98e-18 6.26e-15
+
+PYGM
+
+20 -5.48
+
+5.99 75.3 3.94e-18 6.91e-15
+
+NM_004320
+NM_014440
+
+ATP2A1
+
+23 -4.62
+
+5.96 74.8 5.21e-18 7.83e-15
+
+IL36A
+
+4 -6.17
+
+5.40 72.2 1.93e-17 2.54e-14
+
+KRT78
+NM_173352
+NM_031469 SH3BGRL2
+
+9 -4.25
+
+7.61 70.8 3.94e-17 4.61e-14
+
+4 -3.93
+
+5.54 67.8 1.84e-16 1.93e-13
+
+Note that glmLRT has conducted a test for the last coefficient in the linear model, which we
+can see is the tumor vs normal tissue effect:
+> colnames(design)
+[1] "(Intercept)" "Patient33"
+
+"Patient51"
+
+"TissueT"
+
+The genewise tests are for tumor vs normal differential expression, adjusting for baseline
+differences between the three patients. The tests can be viewed as analogous to paired
+t-tests. The top DE tags have tiny p-values and FDR values, as well as large fold changes.
+Here’s a closer look at the counts-per-million in individual samples for the top genes:
+> o <- order(lrt$table$PValue)
+> cpm(y)[o[1:10],]
+8N
+
+8T
+
+33N
+
+33T
+
+51N
+
+51T
+
+49.70
+
+0.875
+
+27.10
+
+0.878
+
+78.12
+
+2.5436
+
+5744
+
+7.32
+
+95.859
+
+11.80 204.179
+
+3479
+
+50.25
+
+3.124
+
+32.39
+
+1.902 211.64
+
+14.2110
+
+1288
+
+12.13 140.226
+
+6.33
+
+94.445
+
+4.86
+
+56.8439
+
+10351
+
+52.65
+
+3.124
+
+39.48
+
+2.122
+
+79.20
+
+6.0825
+
+5837
+
+152.82
+
+2.750 119.65
+
+1.170
+
+97.70
+
+5.6954
+
+487
+
+107.92
+
+3.124 147.14
+
+3.804 102.83
+
+8.9026
+
+27179
+
+5737
+
+6.89 116.3419
+
+40.09
+
+1.250 172.26
+
+3.292
+
+36.09
+
+0.0553
+
+196374 372.27
+
+20.747 581.56
+
+47.771 145.08
+
+4.5342
+
+83699
+
+5.124 117.20
+
+5.414
+
+5.4190
+
+96.24
+
+48.20
+
+We see that all the top genes have consistent tumour vs normal changes for the three patients.
+The total number of differentially expressed genes at 5% FDR is given by:
+> summary(decideTests(lrt))
+
+49
+
+edgeR User’s Guide
+
+TissueT
+Down
+
+938
+
+NotSig
+
+9241
+
+Up
+
+331
+
+Plot log-fold change against log-counts per million, with DE genes highlighted:
+> plotMD(lrt)
+> abline(h=c(-1, 1), col="blue")
+
+The blue lines indicate 2-fold changes.
+
+4.1.9 Gene ontology analysis
+We perform a gene ontology analysis focusing on the ontology of biological process (BP).
+The genes up-regulated in the tumors tend to be associated with cell differentiation, cell
+migration and tissue morphogenesis:
+> go <- goana(lrt)
+> topGO(go, ont="BP", sort="Up", n=30, truncate=30)
+Term Ont
+GO:0009888
+
+tissue development
+
+GO:0007155
+
+cell adhesion
+
+BP
+
+GO:0022008
+
+neurogenesis
+
+BP
+
+GO:0048513
+
+animal organ development
+
+GO:0060429
+GO:0048699
+
+N
+
+Up Down
+
+P.Up
+
+P.Down
+
+80
+
+183 9.78e-12 3.00e-15
+
+903
+
+66
+
+157 4.76e-11 1.86e-17
+
+953
+
+67
+
+103 1.81e-10 2.07e-02
+
+BP 2041 111
+
+278 5.08e-10 1.94e-15
+
+epithelium development
+
+BP
+
+708
+
+54
+
+93 8.26e-10 7.26e-05
+
+generation of neurons
+
+BP
+
+816
+
+58
+
+91 2.60e-09 1.37e-02
+
+BP 1645
+
+93
+
+234 3.57e-09 6.60e-15
+
+GO:0009653 anatomical structure morpho...
+GO:0030154
+
+cell differentiation
+
+GO:0007399
+
+nervous system development
+
+BP 1176
+
+BP 2365 120
+
+303 5.61e-09 2.74e-13
+
+BP 1379
+
+81
+
+146 9.54e-09 1.28e-02
+
+GO:0048869 cellular developmental proc...
+
+BP 2386 120
+
+306 9.71e-09 1.68e-13
+
+GO:0048729
+
+BP
+
+51 9.95e-09 5.13e-03
+
+tissue morphogenesis
+
+398
+
+36
+
+50
+
+edgeR User’s Guide
+
+GO:0040011
+
+locomotion
+
+GO:0030182
+
+neuron differentiation
+
+GO:0006928 movement of cell or subcell...
+
+BP 1083
+
+68
+
+BP
+
+775
+
+54
+
+166 1.52e-08 3.16e-13
+86 2.02e-08 1.83e-02
+
+BP 1247
+
+74
+
+183 3.33e-08 8.86e-13
+
+GO:0043588
+
+skin development
+
+BP
+
+198
+
+23
+
+27 6.13e-08 1.72e-02
+
+GO:0009887
+
+animal organ morphogenesis
+
+BP
+
+590
+
+44
+
+86 7.21e-08 2.62e-06
+
+GO:0008283 cell population proliferati...
+
+BP 1176
+
+70
+
+147 7.74e-08 7.83e-06
+
+GO:0007275 multicellular organism deve...
+
+BP 2756 130
+
+325 9.28e-08 1.32e-09
+
+GO:0008544
+
+epidermis development
+
+BP
+
+219
+
+24
+
+30 9.65e-08 1.17e-02
+
+GO:0030155
+
+regulation of cell adhesion
+
+BP
+
+497
+
+39
+
+77 1.14e-07 8.57e-07
+155 1.50e-07 1.51e-12
+
+GO:0048870
+
+cell motility
+
+BP 1006
+
+62
+
+GO:0051674
+
+localization of cell
+
+BP 1006
+
+62
+
+155 1.50e-07 1.51e-12
+
+GO:0016477
+
+cell migration
+
+BP
+
+59
+
+151 1.78e-07 1.08e-13
+
+GO:0048856 anatomical structure develo...
+
+BP 3304 148
+
+409 1.83e-07 1.53e-16
+
+GO:0002009 morphogenesis of an epithel...
+
+BP
+
+335
+
+30
+
+38 2.27e-07 7.28e-02
+
+GO:0048468
+
+cell development
+
+BP 1236
+
+71
+
+181 2.49e-07 1.49e-12
+
+GO:0048731
+
+system development
+
+BP 2481 118
+
+303 3.60e-07 1.24e-10
+
+941
+
+GO:0042127 regulation of cell populati...
+
+BP
+
+59
+
+131 1.06e-06 1.57e-06
+
+GO:0032502
+
+BP 3576 154
+
+423 1.19e-06 1.17e-13
+
+BP
+
+29 1.25e-06 3.95e-01
+
+developmental process
+
+GO:0009991 response to extracellular s...
+
+992
+306
+
+27
+
+4.1.10 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+_
+_
+[3] LC MONETARY=English Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] stats4
+
+stats
+
+graphics
+
+grDevices utils
+
+datasets
+
+methods
+
+[8] base
+other attached packages:
+[1] org.Hs.eg.db_3.15.0
+[4] S4Vectors_0.35.3
+
+AnnotationDbi_1.59.1 IRanges_2.31.2
+Biobase_2.57.1
+BiocGenerics_0.43.2
+
+[7] edgeR_3.39.6
+
+limma_3.53.6
+
+knitr_1.40
+
+[10] BiocStyle_2.25.0
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+XVector_0.37.1
+[4] compiler_4.2.1
+[7] zlibbioc_1.43.0
+
+BiocManager_1.30.18
+bitops_1.0-7
+
+GenomeInfoDb_1.33.7
+highr_0.9
+tools_4.2.1
+
+51
+
+edgeR User’s Guide
+
+[10] statmod_1.4.37
+[13] evaluate_0.16
+
+digest_0.6.29
+RSQLite_2.2.16
+
+bit_4.0.4
+memoise_2.0.1
+
+[16] lattice_0.20-45
+[19] rlang_1.0.5
+
+pkgconfig_2.0.3
+cli_3.3.0
+
+png_0.1-7
+DBI_1.1.3
+
+[22] yaml_2.3.5
+
+4.2
+
+xfun_0.32
+_
+[25] GenomeInfoDbData 1.2.8 stringr_1.4.1
+
+fastmap_1.1.0
+httr_1.4.4
+
+[28] Biostrings_2.65.3
+[31] bit64_4.0.5
+
+vctrs_0.4.1
+grid_4.2.1
+
+locfit_1.5-9.6
+R6_2.5.1
+
+[34] rmarkdown_2.17
+[37] magrittr_2.0.3
+
+GO.db_3.15.0
+splines_4.2.1
+
+blob_1.2.3
+htmltools_0.5.3
+
+[40] KEGGREST_1.37.3
+[43] cachem_1.0.6
+
+stringi_1.7.8
+crayon_1.5.1
+
+RCurl_1.98-1.8
+
+RNA-Seq of pathogen inoculated arabidopsis with
+batch effects
+
+4.2.1 Introduction
+This case study re-analyses Arabidopsis thaliana RNA-Seq data described by Cumbie et al.
+[6]. Summarized count data is available as a data object in the CRAN package NBPSeq
+comparing ∆hrcC challenged and mock-inoculated samples [6]. Samples were collected in
+three batches, and adjustment for batch effects proves to be important. The aim of the
+analysis therefore is to detect genes differentially expressed in response to ∆hrcC challenge,
+while correcting for any differences between the batches.
+
+4.2.2 RNA samples
+Pseudomonas syringae is a bacterium often used to study plant reactions to pathogens. In
+this experiment, six-week old Arabidopsis plants were inoculated with the ∆hrcC mutant of
+P. syringae, after which total RNA was extracted from leaves. Control plants were inoculated
+with a mock pathogen.
+Three biological replicates of the experiment were conducted at separate times and using
+independently grown plants and bacteria.
+The six RNA samples were sequenced one per lane on an Illumina Genome Analyzer. Reads
+were aligned and summarized per gene using GENE-counter. The reference genome was
+derived from the TAIR9 genome release (www.arabidopsis.org).
+
+4.2.3 Loading the data
+The data is in the NBPSeq package which does not work in R after version 3.5.0. We loaded
+an earlier version of NBPSeq and saved the data in an RDS file. The RDS file is available
+here. We then read in the RDS file for our analysis.
+> library(edgeR)
+Loading required package:
+
+limma
+
+> arab <- readRDS("arab.rds")
+
+52
+
+edgeR User’s Guide
+
+> head(arab)
+mock1 mock2 mock3 hrcc1 hrcc2 hrcc3
+AT1G01010
+
+35
+
+77
+
+40
+
+46
+
+64
+
+60
+
+AT1G01020
+
+43
+
+45
+
+32
+
+43
+
+39
+
+49
+
+AT1G01030
+
+16
+
+24
+
+26
+
+27
+
+35
+
+20
+
+AT1G01040
+
+72
+
+43
+
+64
+
+66
+
+25
+
+90
+
+AT1G01050
+
+49
+
+78
+
+90
+
+67
+
+45
+
+60
+
+AT1G01060
+
+0
+
+15
+
+2
+
+0
+
+21
+
+8
+
+There are two experimental factors, treatment (hrcc vs mock) and the time that each replicate
+was conducted:
+> Treat <- factor(substring(colnames(arab),1,4))
+> Treat <- relevel(Treat, ref="mock")
+> Time <- factor(substring(colnames(arab),5,5))
+
+We then create a DGEList object:
+> y <- DGEList(counts=arab, group=Treat)
+
+4.2.4 Filtering and normalization
+There is no purpose in analysing genes that are not expressed in either experimental condition,
+so genes are first filtered on expression levels.
+> keep <- filterByExpr(y)
+> table(keep)
+keep
+FALSE
+
+TRUE
+
+12292 13930
+> y <- y[keep, , keep.lib.sizes=FALSE]
+
+The TMM normalization is applied to account for the compositional biases:
+> y <- calcNormFactors(y)
+> y$samples
+group lib.size norm.factors
+mock1
+
+mock
+
+1882391
+
+0.977
+
+mock2
+
+mock
+
+1870625
+
+1.023
+
+mock3
+
+mock
+
+3227243
+
+0.914
+
+hrcc1
+
+hrcc
+
+2101449
+
+1.058
+
+hrcc2
+
+hrcc
+
+1243266
+
+1.083
+
+hrcc3
+
+hrcc
+
+3494821
+
+0.955
+
+4.2.5 Data exploration
+An MDS plot shows the relative similarities of the six samples.
+
+53
+
+edgeR User’s Guide
+
+> plotMDS(y, col=rep(1:2, each=3))
+
+1.0
+0.5
+
+mock1
+
+−0.5 0.0
+
+mock3
+
+hrcc2
+hrcc1
+
+−1.5
+
+Leading logFC dim 2 (29%)
+
+1.5
+
+mock2
+
+hrcc3
+−2.0
+
+−1.5
+
+−1.0
+
+−0.5
+
+0.0
+
+0.5
+
+1.0
+
+1.5
+
+Leading logFC dim 1 (38%)
+
+Distances on an MDS plot of a DGEList object correspond to leading log-fold-change between
+each pair of samples. Leading log-fold-change is the root-mean-square average of the largest
+log2 -fold-changes between each pair of samples. Each pair of samples extracted at each time
+tend to cluster together, suggesting a batch effect. The hrcc treated samples tend to be
+below the mock samples for each time, suggesting a treatment effect within each time. The
+two samples at time 1 are less consistent than at times 2 and 3.
+To examine further consistency of the three replicates, we compute predictive log2-foldchanges (logFC) for the treatment separately for the three times.
+> design <- model.matrix(~Time+Time:Treat)
+> logFC <- predFC(y,design,prior.count=1,dispersion=0.05)
+
+The logFC at the three times are positively correlated with one another, as we would hope:
+> cor(logFC[,4:6])
+Time1:Treathrcc Time2:Treathrcc Time3:Treathrcc
+Time1:Treathrcc
+
+1.000
+
+0.397
+
+0.497
+
+Time2:Treathrcc
+
+0.397
+
+1.000
+
+0.516
+
+Time3:Treathrcc
+
+0.497
+
+0.516
+
+1.000
+
+The correlation is highest between times 2 and 3.
+
+4.2.6 The design matrix
+Before we fit GLMs, we need to define our design matrix based on the experimental design.
+We want to test for differential expressions between ∆hrcC challenged and mock-inoculated
+samples within batches, i.e. adjusting for differences between batches. In statistical terms,
+this is an additive linear model. So the design matrix is created as:
+
+54
+
+edgeR User’s Guide
+
+> design <- model.matrix(~Time+Treat)
+> rownames(design) <- colnames(y)
+> design
+(Intercept) Time2 Time3 Treathrcc
+mock1
+
+1
+
+0
+
+0
+
+0
+
+mock2
+
+1
+
+1
+
+0
+
+0
+
+mock3
+
+1
+
+0
+
+1
+
+0
+
+hrcc1
+
+1
+
+0
+
+0
+
+1
+
+hrcc2
+
+1
+
+1
+
+0
+
+1
+
+hrcc3
+
+1
+
+0
+
+1
+
+1
+
+attr(,"assign")
+[1] 0 1 1 2
+attr(,"contrasts")
+attr(,"contrasts")$Time
+[1] "contr.treatment"
+attr(,"contrasts")$Treat
+[1] "contr.treatment"
+
+4.2.7 Estimating the dispersion
+Estimate the genewise dispersion estimates over all genes, allowing for a possible abundance
+trend. The estimation is also robustified against potential outlier genes.
+> y <- estimateDisp(y, design, robust=TRUE)
+> y$common.dispersion
+[1] 0.0638
+> plotBCV(y)
+
+55
+
+edgeR User’s Guide
+
+The square root of dispersion is the coefficient of biological variation (BCV). The common
+BCV is on the high side, considering that this is a designed experiment using genetically
+identical plants. The trended dispersion shows a decreasing trend with expression level. At
+low logCPM, the dispersions are very large indeed.
+Note that only the trended dispersion is used under the quasi-likelihood (QL) pipeline. The
+tagwise and common estimates are shown here but will not be used further.
+The QL dispersions can be estimated using the glmQLFit function, and then be visualized with
+the plotQLDisp function.
+> fit <- glmQLFit(y, design, robust=TRUE)
+> plotQLDisp(fit)
+
+4.2.8 Differential expression
+Now we test for significant differential expression in each gene using the QL F-test.
+First we check whether there was a genuine need to adjust for the experimental times. We
+do this by testing for differential expression between the three times. There is considerable
+differential expression, justifying our decision to adjust for the batch effect:
+> qlf <- glmQLFTest(fit, coef=2:3)
+> topTags(qlf)
+Coefficient:
+
+Time2 Time3
+
+logFC.Time2 logFC.Time3 logCPM
+
+F
+
+PValue
+
+FDR
+
+AT5G31702
+
+5.87
+
+-2.593
+
+5.98 114.4 1.08e-08 0.000103
+
+AT3G33004
+
+4.85
+
+-1.788
+
+5.67 103.2 1.98e-08 0.000103
+
+AT2G11230
+
+3.54
+
+-1.557
+
+5.64 101.1 2.23e-08 0.000103
+
+AT2G07782
+
+3.53
+
+-1.641
+
+5.32
+
+96.1 2.99e-08 0.000104
+
+AT2G23910
+
+3.64
+
+-0.408
+
+5.17
+
+87.9 5.01e-08 0.000118
+
+AT2G18193
+
+3.10
+
+-2.420
+
+5.11
+
+87.7 5.08e-08 0.000118
+
+AT5G54830
+
+3.12
+
+-0.391
+
+6.11
+
+82.5 7.20e-08 0.000143
+
+AT2G27770
+
+2.52
+
+-1.593
+
+5.46
+
+78.6 9.54e-08 0.000166
+
+56
+
+edgeR User’s Guide
+
+AT1G05680
+
+2.12
+
+-1.317
+
+6.02
+
+66.9 2.38e-07 0.000368
+
+AT4G05635
+
+3.21
+
+-2.479
+
+4.80
+
+62.2 3.59e-07 0.000501
+
+> FDR <- p.adjust(qlf$table$PValue, method="BH")
+> sum(FDR < 0.05)
+[1] 1370
+
+Now conduct QL F-tests for the pathogen effect and show the top genes. By default, the
+test is for the last coefficient in the design matrix, which in this case is the treatment effect:
+> qlf <- glmQLFTest(fit)
+> topTags(qlf)
+Coefficient:
+
+Treathrcc
+
+logFC logCPM
+
+F
+
+PValue
+
+FDR
+
+AT2G19190
+
+4.48
+
+7.38 308 4.22e-10 5.20e-06
+
+AT2G39530
+
+4.32
+
+6.71 280 7.46e-10 5.20e-06
+
+AT2G39380
+
+4.93
+
+5.77 249 1.51e-09 5.97e-06
+
+AT3G46280
+
+4.77
+
+8.10 243 1.72e-09 5.97e-06
+
+AT1G51800
+
+3.95
+
+7.71 232 2.25e-09 6.28e-06
+
+AT1G51850
+
+5.30
+
+5.42 208 4.29e-09 8.31e-06
+
+AT2G44370
+
+5.40
+
+5.20 200 5.42e-09 8.31e-06
+
+AT3G55150
+
+5.76
+
+4.91 198 5.78e-09 8.31e-06
+
+AT1G51820
+
+4.32
+
+6.38 197 5.89e-09 8.31e-06
+
+AT5G48430
+
+6.30
+
+6.74 197 5.97e-09 8.31e-06
+
+Here’s a closer look at the individual counts-per-million for the top genes. The top genes are
+very consistent across the three replicates:
+> top <- rownames(topTags(qlf))
+> cpm(y)[top,]
+mock1 mock2 mock3 hrcc1 hrcc2 hrcc3
+AT2G19190 16.853 12.54 13.22 341.7 262.2 344.9
+AT2G39530
+
+7.067
+
+9.41 13.22 158.3 197.6 238.8
+
+AT2G39380
+
+2.175
+
+3.14
+
+4.75
+
+91.7
+
+86.9 132.8
+
+AT3G46280 19.028 17.77 18.30 385.3 385.5 806.4
+AT1G51800 29.357 17.25 30.50 362.8 358.0 455.8
+AT1G51850
+
+1.087
+
+1.05
+
+3.73
+
+78.2
+
+57.9 107.0
+
+AT2G44370
+
+2.175
+
+1.05
+
+1.69
+
+57.1
+
+69.1
+
+84.5
+
+AT3G55150
+
+0.544
+
+1.05
+
+1.36
+
+43.2
+
+66.9
+
+63.2
+
+AT1G51820
+
+9.786
+
+7.84
+
+6.10 121.4 161.2 187.9
+
+AT5G48430
+
+4.349
+
+4.70
+
+0.00 189.3 323.9 122.9
+
+The total number of genes significantly up-regulated or down-regulated at 5% FDR is summarized as follows:
+> summary(decideTests(qlf))
+Treathrcc
+Down
+
+919
+
+NotSig
+
+12125
+
+Up
+
+886
+
+57
+
+edgeR User’s Guide
+
+We can plot all the logFCs against average count size, highlighting the DE genes:
+> plotMD(qlf)
+> abline(h=c(-1,1), col="blue")
+
+The blue lines indicate 2-fold up or down.
+
+4.2.9 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+
+[3] LC_MONETARY=English_Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] stats
+
+graphics
+
+grDevices utils
+
+other attached packages:
+[1] edgeR_3.39.6
+limma_3.53.6
+
+datasets
+
+knitr_1.40
+
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+locfit_1.5-9.6
+
+methods
+
+base
+
+BiocStyle_2.25.0
+
+lattice_0.20-45
+
+58
+
+edgeR User’s Guide
+
+[4] digest_0.6.29
+[7] evaluate_0.16
+[10] stringi_1.7.8
+
+grid_4.2.1
+highr_0.9
+
+magrittr_2.0.3
+rlang_1.0.5
+
+[13] splines_4.2.1
+
+cli_3.3.0
+statmod_1.4.37
+
+rmarkdown_2.17
+tools_4.2.1
+
+[16] stringr_1.4.1
+[19] fastmap_1.1.0
+
+xfun_0.32
+compiler_4.2.1
+
+yaml_2.3.5
+BiocManager_1.30.18
+
+[22] htmltools_0.5.3
+
+4.3
+
+Profiles of Yoruba HapMap individuals
+
+4.3.1 Background
+RNA-Seq profiles were made of cell lines derived from lymphoblastoid cells from 69 different
+Yoruba individuals from Ibadan, Nigeria [29] [30]. The profiles were generated as part of
+the International HapMap project [16]. RNA from each individual was sequenced on at least
+two lanes of an Illumina Genome Analyser 2, and mapped reads to the human genome using
+MAQ v0.6.8.
+The study group here is essentially an opportunity sample and the individuals are likely to be
+genetically diverse. In this analysis we look at genes that are differentially expressed between
+males and female.
+
+4.3.2 Loading the data
+Read counts summarized by Ensembl gene identifiers are available in the tweeDEseqCountData package:
+> library(tweeDEseqCountData)
+> data(pickrell1)
+> Counts <- exprs(pickrell1.eset)
+> dim(Counts)
+[1] 38415
+
+69
+
+> Counts[1:5,1:5]
+NA18486 NA18498 NA18499 NA18501 NA18502
+ENSG00000127720
+
+6
+
+32
+
+14
+
+35
+
+14
+
+ENSG00000242018
+
+20
+
+21
+
+24
+
+22
+
+16
+
+ENSG00000224440
+
+0
+
+0
+
+0
+
+0
+
+0
+
+ENSG00000214453
+
+0
+
+0
+
+0
+
+0
+
+0
+
+ENSG00000237787
+
+0
+
+0
+
+1
+
+0
+
+0
+
+In this analysis we will compare female with male individuals.
+> Gender <- pickrell1.eset$gender
+> table(Gender)
+Gender
+female
+
+male
+
+40
+
+29
+
+> rm(pickrell1.eset)
+
+59
+
+edgeR User’s Guide
+
+Annotation for each Ensemble gene is also available from the tweeDEseqCountData package:
+> data(annotEnsembl63)
+> annot <- annotEnsembl63[,c("Symbol","Chr")]
+> annot[1:5,]
+Symbol Chr
+ENSG00000252775
+
+U7
+
+5
+
+ENSG00000207459
+
+U6
+
+5
+
+ENSG00000252899
+
+U7
+
+5
+
+ENSG00000201298
+
+U6
+
+5
+
+ENSG00000222266
+
+U6
+
+5
+
+> rm(annotEnsembl63)
+
+Form a DGEList object combining the counts and associated annotation:
+> library(edgeR)
+> y <- DGEList(counts=Counts, genes=annot[rownames(Counts),])
+
+4.3.3 Filtering and normalization
+Keep genes that are expressed in a worthwhilte number of samples:
+> isexpr <- filterByExpr(y, group=Gender)
+> table(isexpr)
+isexpr
+FALSE
+
+TRUE
+
+20226 18189
+
+Keep only genes with defined annotation, and recompute library sizes:
+> hasannot <- rowSums(is.na(y$genes))==0
+> y <- y[isexpr & hasannot, , keep.lib.sizes=FALSE]
+> dim(y)
+[1] 17517
+
+69
+
+The library sizes vary from about 5 million to over 15 million:
+
+8 12
+4
+0
+
+Library size (millions)
+
+> barplot(y$samples$lib.size*1e-6, names=1:69, ylab="Library size (millions)")
+
+1 3 5 7 9
+
+12
+
+15
+
+18
+
+21
+
+24
+
+27
+
+30
+
+33
+
+36
+
+39
+
+42
+
+45
+
+48
+
+51
+
+54
+
+57
+
+60
+
+63
+
+66
+
+69
+
+60
+
+edgeR User’s Guide
+
+Apply TMM normalization to account for the composition biases:
+> y <- calcNormFactors(y)
+> head(y$samples)
+group lib.size norm.factors
+NA18486
+
+1
+
+NA18498
+
+1 13614927
+
+7750614
+
+1.096
+
+NA18499
+
+1
+
+8570996
+
+0.958
+
+NA18501
+
+1
+
+8596932
+
+1.194
+
+NA18502
+
+1 13377004
+
+0.942
+
+NA18504
+
+1
+
+0.983
+
+9883172
+
+0.929
+
+4.3.4 Estimating the dispersion
+We are interested in the differences between male and female. Hence, we create a design
+matrix using the gender factor. We estimate the NB dispersion using estimateDisp. The
+estimation is robustified against potential outlier genes.
+> design <- model.matrix(~Gender)
+> y <- estimateDisp(y, design, robust=TRUE)
+> plotBCV(y)
+
+We then estimate the QL dispersions around the dispersion trend using glmQLFit. The large
+number of cases and the high variability means that the QL dispersions are not squeezed very
+heavily from the raw values:
+> fit <- glmQLFit(y, design, robust=TRUE)
+> plotQLDisp(fit)
+
+61
+
+edgeR User’s Guide
+
+4.3.5 Differential expression
+Now find genes differentially expressed between male and females. Positive log-fold-changes
+mean higher expression in males. The highly ranked genes are mostly on the X or Y chromosomes. Top ranked is the famous XIST gene, which is known to be expressed only in females.
+> qlf <- glmQLFTest(fit)
+> topTags(qlf,n=15)
+Coefficient:
+
+Gendermale
+Symbol Chr logFC logCPM
+
+ENSG00000229807
+
+XIST
+
+ENSG00000099749
+ENSG00000131002
+
+F
+
+PValue
+
+FDR
+
+X -9.48
+
+7.249 1209 1.11e-46 1.95e-42
+
+CYorf15A
+
+Y
+
+4.28
+
+1.757
+
+CYorf15B
+
+Y
+
+5.63
+
+2.056
+
+584 3.13e-36 1.83e-32
+
+ENSG00000157828
+
+RPS4Y2
+
+Y
+
+3.17
+
+4.208
+
+577 4.65e-36 2.04e-32
+
+ENSG00000233864
+
+TTTY15
+
+Y
+
+4.84
+
+1.254
+
+536 4.71e-35 1.65e-31
+
+ENSG00000198692
+
+EIF1AY
+
+Y
+
+2.36
+
+3.247
+
+376 2.84e-30 8.30e-27
+
+ENSG00000165246
+
+NLGN4Y
+
+Y
+
+5.09
+
+1.675
+
+305 1.38e-27 3.45e-24
+
+ENSG00000183878
+
+UTY
+
+Y
+
+1.86
+
+3.137
+
+254 2.60e-25 5.68e-22
+
+ENSG00000243209
+
+AC010889.1
+
+Y
+
+2.66
+
+0.797
+
+231 3.86e-24 7.51e-21
+
+ENSG00000129824
+
+RPS4Y1
+
+Y
+
+2.53
+
+5.401
+
+229 5.20e-24 9.11e-21
+
+ENSG00000012817
+
+KDM5D
+
+Y
+
+1.47
+
+4.949
+
+226 6.64e-24 1.06e-20
+
+ENSG00000213318
+
+RP11-331F4.1
+
+16
+
+3.67
+
+3.688
+
+214 3.71e-23 5.41e-20
+
+ENSG00000067048
+
+DDX3Y
+
+Y
+
+1.62
+
+5.621
+
+183 1.89e-21 2.55e-18
+
+ENSG00000146938
+
+NLGN4X
+
+X
+
+3.94
+
+1.047
+
+140 1.52e-18 1.90e-15
+
+ENSG00000232928 RP13-204A15.4
+
+X
+
+1.44
+
+3.558
+
+112 2.46e-16 2.87e-13
+
+858 1.10e-41 9.62e-38
+
+> summary(decideTests(qlf))
+Gendermale
+Down
+NotSig
+Up
+
+46
+17450
+21
+
+62
+
+edgeR User’s Guide
+
+4.3.6 Gene set testing
+The tweeDEseqCountData package includes a list of genes belonging to the male-specific
+region of chromosome Y, and a list of genes located in the X chromosome that have been
+reported to escape X-inactivation. We expect genes in the first list to be up-regulated in
+males, whereas genes in the second list should be up-regulated in females.
+> data(genderGenes)
+> Ymale <- rownames(y) %in% msYgenes
+> Xescape <- rownames(y) %in% XiEgenes
+
+Roast gene set tests by fry() confirm that the male-specific genes are significantly up as a
+group in our comparison of males with females, whereas the X genes are significantly down
+as a group [41].
+> index <- list(Y=Ymale, X=Xescape)
+> fry(y, index=index, design=design)
+NGenes Direction
+
+PValue
+
+FDR PValue.Mixed FDR.Mixed
+
+Y
+
+12
+
+Up 1.00e-45 2.01e-45
+
+6.70e-11
+
+6.70e-11
+
+X
+
+47
+
+Down 6.93e-17 6.93e-17
+
+1.26e-68
+
+2.53e-68
+
+A barcode plot can be produced to visualize the results. Genes are ranked from left to right
+by increasing log-fold-change in the background of the barcode plot. Genes in the set of
+msYgenes are represented by red bars whereas genes in the set of XiEgenes are represented by
+blue bars. The line above the barcode shows the relative local enrichment of the vertical
+bars in each part of the plot. This particular plot suggests that the male-specific genes tend
+to have large positive log-fold-changes, whereas the X genes tend to have large negative
+log-fold-changes.
+
+5.625
+
+0.195
+
+0.122
+
+0.078
+
+0.042
+
+0.009
+
+−0.026
+
+−0.065
+
+−0.120
+
+−0.206
+
+−9.484
+
+3.6Enrichment 0
+
+Up
+
+Down
+
+0 Enrichment6.6
+
+> barcodeplot(qlf$table$logFC, index[[1]], index[[2]])
+
+Statistic
+
+The results from competitive camera gene sets tests are even more convincing [42]. The
+positive intergene correlations here show that the genes in each set tend to be biologically
+correlated:
+
+63
+
+edgeR User’s Guide
+
+> camera(y, index, design)
+NGenes Direction
+Y
+
+12
+
+X
+
+47
+
+PValue
+
+FDR
+
+Up 1.32e-295 2.65e-295
+Down
+
+7.38e-25
+
+7.38e-25
+
+See where the X and Y genes fall on the MA plot:
+> with(qlf$table, plot(logCPM,logFC,pch=16,cex=0.2))
+> with(qlf$table, points(logCPM[Ymale],logFC[Ymale],pch=16,col="red"))
+> with(qlf$table, points(logCPM[Xescape],logFC[Xescape],pch=16,col="dodgerblue"))
+> legend("bottomleft",legend=c("Ymale genes","Xescape genes"),
++
+
+pch=16,col=c("red","dodgerblue"))
+
+4.3.7 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+_
+_
+[3] LC MONETARY=English Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] stats
+
+graphics
+
+grDevices utils
+
+datasets
+
+methods
+
+base
+
+64
+
+edgeR User’s Guide
+
+other attached packages:
+[1] edgeR_3.39.6
+
+limma_3.53.6
+
+[3] tweeDEseqCountData_1.35.0 Biobase_2.57.1
+[5] BiocGenerics_0.43.2
+knitr_1.40
+[7] BiocStyle_2.25.0
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+locfit_1.5-9.6
+
+lattice_0.20-45
+
+[4] digest_0.6.29
+[7] evaluate_0.16
+
+grid_4.2.1
+highr_0.9
+
+magrittr_2.0.3
+rlang_1.0.5
+
+[10] stringi_1.7.8
+[13] splines_4.2.1
+
+cli_3.3.0
+statmod_1.4.37
+
+rmarkdown_2.17
+tools_4.2.1
+
+[16] stringr_1.4.1
+[19] fastmap_1.1.0
+
+xfun_0.32
+compiler_4.2.1
+
+yaml_2.3.5
+BiocManager_1.30.18
+
+[22] htmltools_0.5.3
+
+4.4
+
+RNA-Seq profiles of mouse mammary gland
+
+4.4.1 Introduction
+The RNA-Seq data of this case study is described in Fu et al. [12]. The sequence and count
+data are publicly available from the Gene Expression Omnibus (GEO) at the series accession
+number GSE60450. This study examines the expression profiles of basal stem-cell enriched
+cells (B) and committed luminal cells (L) in the mammary gland of virgin, pregnant and
+lactating mice. Six groups are present, with one for each combination of cell type and mouse
+status. Each group contains two biological replicates. This is summarized in the table below,
+where the basal and luminal cell types are abbreviated with B and L respectively.
+> targets <- read.delim("targets.txt", header=TRUE)
+> targets
+FileName GEOAccession CellType
+
+Status
+
+1
+
+SRR1552450.fastq
+
+GSM1480297
+
+B
+
+virgin
+
+2
+
+SRR1552451.fastq
+
+GSM1480298
+
+B
+
+virgin
+
+3
+
+SRR1552452.fastq
+
+GSM1480299
+
+B pregnant
+
+4
+
+SRR1552453.fastq
+
+GSM1480300
+
+B pregnant
+
+5
+
+SRR1552454.fastq
+
+GSM1480301
+
+B
+
+lactate
+
+6
+
+SRR1552455.fastq
+
+GSM1480302
+
+B
+
+lactate
+
+7
+
+SRR1552444.fastq
+
+GSM1480291
+
+L
+
+virgin
+
+8
+
+SRR1552445.fastq
+
+GSM1480292
+
+L
+
+virgin
+
+9
+
+SRR1552446.fastq
+
+GSM1480293
+
+L pregnant
+
+10 SRR1552447.fastq
+
+GSM1480294
+
+L pregnant
+
+11 SRR1552448.fastq
+
+GSM1480295
+
+L
+
+lactate
+
+12 SRR1552449.fastq
+
+GSM1480296
+
+L
+
+lactate
+
+The name of the file containing the read sequences for each library is also shown. Each file
+is downloaded from the Sequence Read Archive and has an accession number starting with
+SRR, e.g., SRR1552450 for the first library in targets.
+
+65
+
+edgeR User’s Guide
+
+4.4.2 Read alignment and processing
+Prior to read alignment, these files are converted into the FASTQ format using the fastq-dump
+utility from the SRA Toolkit. See http://www.ncbi.nlm.nih.gov/books/NBK158900 for how to
+download and use the SRA Toolkit.
+Before the differential expression analysis can proceed, these reads must be aligned to the
+mouse genome and counted into annotated genes. This can be achieved with functions in the
+Rsubread package [19]. We assume that an index of the mouse genome is already available if not, this can be constructed from a FASTA file of the genome sequence with the buildindex
+command. In this example, we assume that the prefix for the index files is mm10. The reads
+in each FASTQ file are then aligned to the mouse genome, as shown below.
+> library(Rsubread)
+> output.files <- sub(".fastq", ".bam", targets$FileName)
+> align("mm10", readfile1=targets$FileName, phredOffset=33,
++
+input_format="FASTQ", output_file=output.files)
+
+This produces a set of BAM files, where each file contains the read alignments for each library.
+The mapped reads can be counted into mouse genes by using the featureCounts function. It
+uses the exon intervals defined in the NCBI annotation of the mm10 genome.
+> fc <- featureCounts(output.files, annot.inbuilt="mm10")
+> colnames(fc$counts) <- 1:12
+> head(fc$counts)
+1
+497097
+
+2
+
+438 300
+
+6
+
+7
+
+8
+
+9
+
+10
+
+11
+
+65 237 354 287
+
+3
+
+4
+
+5
+
+0
+
+0
+
+0
+
+0
+
+0
+
+12
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+0
+
+100503874
+
+1
+
+0
+
+1
+
+1
+
+0
+
+4
+
+100038431
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+19888
+
+1
+
+1
+
+0
+
+0
+
+0
+
+0
+
+10
+
+3
+
+10
+
+2
+
+0
+
+0
+
+20671
+
+106 182
+
+82 105
+
+43
+
+82
+
+16
+
+25
+
+18
+
+8
+
+3
+
+10
+
+27395
+
+309 234 337 300 290 270 560 464 489 328 307 342
+
+The row names of the matrix represent the Entrez gene identifiers for each gene. In the
+output from featureCounts, the column names of fc$counts are the output file names from
+align. Here, we simplify them for brevity.
+
+4.4.3 Count loading and annotation
+We create a DGEList object as follows
+> group <- factor(paste0(targets$CellType, ".", targets$Status))
+> y <- DGEList(fc$counts, group=group)
+> colnames(y) <- targets$GEO
+
+Human-readable gene symbols can also be added to complement the Entrez identifiers for
+each gene, using the annotation in the org.Mm.eg.db package.
+> require(org.Mm.eg.db)
+> Symbol <- mapIds(org.Mm.eg.db, keys=rownames(y), keytype="ENTREZID",
++
+
+column="SYMBOL")
+
+> y$genes <- data.frame(Symbol=Symbol)
+
+66
+
+edgeR User’s Guide
+
+4.4.4 Filtering and normalization
+Here, a gene is only retained if it is expressed at a minimum level:
+> keep <- filterByExpr(y)
+> summary(keep)
+Mode
+
+FALSE
+
+TRUE
+
+logical
+
+11210
+
+15969
+
+> y <- y[keep, , keep.lib.sizes=FALSE]
+
+TMM normalization is performed to eliminate composition biases between libraries.
+> y <- calcNormFactors(y)
+> y$samples
+group lib.size norm.factors
+GSM1480297
+
+B.virgin 23219195
+
+1.238
+
+GSM1480298
+
+B.virgin 21769326
+
+1.214
+
+GSM1480299 B.pregnant 24092719
+
+1.125
+
+GSM1480300 B.pregnant 22657703
+
+1.071
+
+GSM1480301
+
+B.lactate 21522881
+
+1.036
+
+GSM1480302
+
+B.lactate 20009184
+
+1.087
+
+GSM1480291
+
+L.virgin 20385437
+
+1.368
+
+GSM1480292
+
+L.virgin 21699830
+
+1.365
+
+GSM1480293 L.pregnant 22236469
+
+1.004
+
+GSM1480294 L.pregnant 21983364
+
+0.923
+
+GSM1480295
+
+L.lactate 24720123
+
+0.529
+
+GSM1480296
+
+L.lactate 24653390
+
+0.535
+
+The performance of the TMM normalization procedure can be examined using mean-difference
+(MD) plots. This visualizes the library size-adjusted log-fold change between two libraries
+(the difference) against the average log-expression across those libraries (the mean). The following MD plot is generated by comparing sample 1 against an artificial library constructed
+from the average of all other samples.
+> plotMD(cpm(y, log=TRUE), column=1)
+> abline(h=0, col="red", lty=2, lwd=2)
+
+67
+
+edgeR User’s Guide
+
+Ideally, the bulk of genes should be centred at a log-fold change of zero. This indicates that
+any composition bias between libraries has been successfully removed. This quality check
+should be repeated by constructing a MD plot for each sample.
+
+4.4.5 Data exploration
+The data can be explored by generating multi-dimensional scaling (MDS) plots. This visualizes the differences between the expression profiles of different samples in two dimensions.
+> points <- c(0,1,2,15,16,17)
+> colors <- rep(c("blue", "darkgreen", "red"), 2)
+> plotMDS(y, col=colors[group], pch=points[group])
+
+2
+
+L.lactate
+L.pregnant
+L.virgin
+
+−1
+
+0
+
+1
+
+B.lactate
+B.pregnant
+B.virgin
+
+−2
+
+Leading logFC dim 2 (17%)
+
+3
+
+> legend("topleft", legend=levels(group), pch=points, col=colors, ncol=2)
+
+−3
+
+−2
+
+−1
+
+0
+
+1
+
+2
+
+3
+
+Leading logFC dim 1 (65%)
+
+68
+
+edgeR User’s Guide
+
+Replicate samples from the same group cluster together in the plot, while samples from
+different groups form separate clusters. This indicates that the differences between groups
+are larger than those within groups, i.e., differential expression is greater than the variance
+and can be detected. The distance between basal samples on the left and luminal cells on
+the right is about 6 units, corresponding to a leading fold change of about 64-fold (26 = 64)
+between basal and luminal. The expression differences between virgin, pregnant and lactating
+are greater for luminal cells than for basal.
+
+4.4.6 The design matrix
+The experimental design for this study can be parametrized with a one-way layout, whereby
+one coefficient is assigned to each group. The design matrix contains the predictors for each
+sample and and is constructed using the code below.
+> design <- model.matrix(~ 0 + group)
+> colnames(design) <- levels(group)
+> design
+B.lactate B.pregnant B.virgin L.lactate L.pregnant L.virgin
+1
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+2
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+3
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+4
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+5
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+6
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+7
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+8
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+9
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+10
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+11
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+12
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+attr(,"assign")
+[1] 1 1 1 1 1 1
+attr(,"contrasts")
+attr(,"contrasts")$group
+[1] "contr.treatment"
+
+4.4.7 Estimating the dispersion
+The NB dispersion is estimated using the estimateDisp function. This returns the DGEList
+object with additional entries for the estimated NB dispersions for all gene. These estimates
+can be visualized with plotBCV, which shows the root-estimate, i.e., the biological coefficient
+of variation for each gene.
+> y <- estimateDisp(y, design, robust=TRUE)
+> y$common.dispersion
+[1] 0.0134
+> plotBCV(y)
+
+69
+
+edgeR User’s Guide
+
+Note that only the trended dispersion is used under the quasi-likelihood (QL) pipeline. The
+tagwise and common estimates are shown here but will not be used further.
+For the QL dispersions, estimation can be performed using the glmQLFit function. This returns
+a DGEGLM object containing the estimated values of the GLM coefficients for each gene, as well
+as the fitted mean-QL dispersion trend, the squeezed QL estimates and the prior degrees of
+freedom (df). These can be visualized with the plotQLDisp function.
+> fit <- glmQLFit(y, design, robust=TRUE)
+> head(fit$coefficients)
+B.lactate B.pregnant B.virgin L.lactate L.pregnant L.virgin
+497097
+
+-11.14
+
+-12.02
+
+-11.23
+
+-19.0
+
+-19.03
+
+-19.0
+
+20671
+
+-12.77
+
+-12.51
+
+-12.15
+
+-14.5
+
+-14.31
+
+-14.1
+
+27395
+
+-11.27
+
+-11.30
+
+-11.53
+
+-10.6
+
+-10.87
+
+-10.9
+
+18777
+
+-10.15
+
+-10.21
+
+-10.77
+
+-10.1
+
+-10.39
+
+-10.4
+
+21399
+
+-9.89
+
+-9.74
+
+-9.79
+
+-10.2
+
+-9.97
+
+-10.0
+
+58175
+
+-16.16
+
+-14.85
+
+-15.99
+
+-13.3
+
+-12.29
+
+-12.1
+
+> plotQLDisp(fit)
+
+70
+
+edgeR User’s Guide
+
+Setting robust=TRUE in glmQLFit is strongly recommended [28]. Setting robust=TRUE in estimate
+Disp has no effect on the downstream analysis, but is nevertheless very useful as it identifies
+genes that are outliers from the mean-NB dispersion trend.
+
+4.4.8 Differential expression
+We test for significant differential expression in each gene, using the QL F-test. The contrast
+of interest can be specified using the makeContrasts function. Here, genes are tested for DE
+between the basal pregnant and lactating groups. This is done by defining the null hypothesis
+as B.pregnant - B.lactate = 0.
+> con <- makeContrasts(B.pregnant - B.lactate, levels=design)
+> qlf <- glmQLFTest(fit, contrast=con)
+
+The top set of most significant genes can be examined with topTags. Here, a positive log-fold
+change represents genes that are up in B.pregnant over B.lactate. Multiplicity correction is
+performed by applying the Benjamini-Hochberg method on the p-values, to control the false
+discovery rate (FDR).
+> topTags(qlf)
+Coefficient:
+
+-1*B.lactate 1*B.pregnant
+Symbol logFC logCPM
+F
+PValue
+
+FDR
+
+12992
+
+Csn1s2b -6.09
+
+211577
+
+Mrgprf -5.15
+
+2.74 345 1.17e-10 7.15e-07
+
+226101
+
+Myof -2.32
+
+6.44 324 1.74e-10 7.15e-07
+
+381290
+
+Atp2b4 -2.14
+
+140474
+
+10.18 423 4.27e-11 6.81e-07
+
+6.14 323 1.79e-10 7.15e-07
+
+Muc4
+
+7.17
+
+6.05 307 2.41e-10 7.70e-07
+
+231830 Micall2
+
+2.25
+
+5.18 282 4.12e-10 1.10e-06
+
+24117
+
+Wif1
+
+1.82
+
+6.76 259 6.85e-10 1.56e-06
+
+12740
+
+Cldn4
+
+5.32
+
+9.87 299 8.47e-10 1.60e-06
+
+21953
+
+Tnni2 -5.75
+
+3.86 315 9.00e-10 1.60e-06
+
+231991
+
+Creb5 -2.57
+
+4.87 243 1.03e-09 1.64e-06
+
+71
+
+edgeR User’s Guide
+
+The top gene Csn1s2b has a large negative log2-fold-change, showing that it is far more
+highly expressed in lactating than pregnant mice. This gene is known to be a major source
+of protein in milk.
+The total number of DE genes in each direction at a FDR of 5% can be examined with de
+cideTests. There are in fact nearly 4500 DE genes an FDR cut-off of 5% in this comparison:
+> summary(decideTests(qlf))
+-1*B.lactate 1*B.pregnant
+Down
+
+2509
+
+NotSig
+
+10694
+
+Up
+
+2766
+
+The differential expression test results can be visualized using an MD plot. The log-fold
+change for each gene is plotted against the average abundance, i.e., logCPM in the result table
+above. Significantly DE genes at a FDR of 5% are highlighted.
+> plotMD(qlf)
+
+We use glmTreat to narrow down the list of DE genes and focus on genes that are more
+biologically meaningful. We test whether the differential expression is significantly above a
+log2-fold-change of log2 1.2, i.e., a fold-change of 1.2.
+> tr <- glmTreat(fit, contrast=con, lfc=log2(1.2))
+> topTags(tr)
+Coefficient:
+
+-1*B.lactate 1*B.pregnant
+Symbol logFC unshrunk.logFC logCPM
+
+PValue
+
+FDR
+
+12992
+
+Csn1s2b -6.09
+
+-6.09
+
+211577
+
+Mrgprf -5.15
+
+-5.15
+
+2.74 1.27e-10 8.71e-07
+
+226101
+
+Myof -2.32
+
+-2.32
+
+6.44 2.49e-10 8.71e-07
+
+140474
+381290
+
+Muc4
+
+10.18 4.51e-11 7.20e-07
+
+7.17
+
+7.34
+
+6.05 2.67e-10 8.71e-07
+
+Atp2b4 -2.14
+
+-2.15
+
+6.14 2.73e-10 8.71e-07
+
+2.25
+
+5.18 6.06e-10 1.61e-06
+
+231830 Micall2
+
+2.25
+
+72
+
+edgeR User’s Guide
+
+12740
+
+Cldn4
+
+5.32
+
+5.32
+
+9.87 8.98e-10 1.88e-06
+
+21953
+
+Tnni2 -5.75
+
+-5.76
+
+3.86 9.44e-10 1.88e-06
+
+24117
+
+Wif1
+
+1.82
+
+1.82
+
+6.76 1.22e-09 2.17e-06
+
+231991
+
+Creb5 -2.57
+
+-2.58
+
+4.87 1.37e-09 2.19e-06
+
+Around 3000 genes are detected as DE with fold-change significantly above 1.2 at an FDR
+cut-off of 5%.
+> summary(decideTests(tr))
+-1*B.lactate 1*B.pregnant
+Down
+
+1434
+
+NotSig
+
+12728
+
+Up
+
+1807
+
+The test results are visualized in the following smear plot. Genes that are significantly DE
+above a fold-change of 1.2 at an FDR of 5% are highlighted in red.
+> plotMD(tr)
+
+4.4.9 ANOVA-like testing
+The differential expression analysis of two-group comparison can be easily extended to comparisons between three or more groups. This is done by creating a matrix of contrasts, where
+which each column represents a contrast between two groups of interest. In this manner,
+users can perform a one-way analysis of variance (ANOVA) for each gene.
+As an example, suppose we want to compare the three groups in the luminal population,
+i.e., virgin, pregnant and lactating. An appropriate contrast matrix can be created as shown
+below, to make pairwise comparisons between all three groups.
+> con <- makeContrasts(
++
+
+L.PvsL = L.pregnant - L.lactate,
+
++
+
+L.VvsL = L.virgin - L.lactate,
+
+73
+
+edgeR User’s Guide
+
++
+
+L.VvsP = L.virgin - L.pregnant, levels=design)
+
+The QL F-test is then applied to identify genes that are DE among the three groups. This
+combines the three pairwise comparisons into a single F-statistic and p-value. The top set of
+significant genes can be displayed with topTags.
+> anov <- glmQLFTest(fit, contrast=con)
+> topTags(anov)
+Coefficient:
+
+LR test on 2 degrees of freedom
+
+Symbol logFC.L.PvsL logFC.L.VvsL logFC.L.VvsP logCPM
+19242
+
+F
+
+PValue
+
+Ptn
+
+-1.54
+
+7.26
+
+8.800
+
+7.97 2389 3.14e-17
+
+13645
+
+Egf
+
+-5.36
+
+-7.22
+
+-1.865
+
+3.67 1123 3.91e-15
+
+52150
+
+Kcnk6
+
+-2.42
+
+-7.00
+
+-4.579
+
+5.91 1016 7.37e-15
+
+12992 Csn1s2b
+
+-8.55
+
+-11.36
+
+-2.811
+
+10.18 1055 8.53e-15
+
+15439
+
+Hp
+
+1.08
+
+5.42
+
+4.336
+
+4.93
+
+987 8.88e-15
+
+14183
+
+Fgfr2
+
+-1.15
+
+3.95
+
+5.096
+
+7.38
+
+953 1.11e-14
+
+20856
+
+Stc2
+
+-1.81
+
+3.19
+
+5.005
+
+6.10
+
+914 1.45e-14
+
+11941
+
+Atp2b2
+
+-7.37
+
+-10.56
+
+-3.191
+
+6.60 1135 1.53e-14
+
+13358 Slc25a1
+
+-4.13
+
+-4.91
+
+-0.785
+
+7.49
+
+889 1.73e-14
+
+17068
+
+3.42
+
+9.24
+
+5.819
+
+4.68
+
+887 1.75e-14
+
+Ly6d
+FDR
+
+19242 5.01e-13
+13645 2.80e-11
+52150 2.80e-11
+12992 2.80e-11
+15439 2.80e-11
+14183 2.80e-11
+20856 2.80e-11
+11941 2.80e-11
+13358 2.80e-11
+17068 2.80e-11
+
+Note that the three contrasts of pairwise comparisons are linearly dependent. Constructing
+the contrast matrix with any two of the contrasts would be sufficient to specify an ANOVA
+test. For instance, the contrast matrix shown below produces the same test results but with
+a different column of log-fold changes.
+> con <- makeContrasts(
++
+
+L.PvsL = L.pregnant - L.lactate,
+
++
+
+L.VvsP = L.virgin - L.pregnant, levels=design)
+
+4.4.10 Gene ontology analysis
+Further analyses are required to interpret the differential expression results in a biological
+context. One common downstream procedure is a gene ontology (GO) enrichment analysis.
+Suppose we want to identify GO terms that are over-represented in the basal lactating group
+compared to the basal pregnancy group. This can be achieved by applying the goana function
+to the differential expression results of that comparison. The top set of most enriched GO
+terms can be viewed with the topGO function.
+
+74
+
+edgeR User’s Guide
+
+> con <- makeContrasts(B.lactate - B.pregnant, levels=design)
+> qlf <- glmQLFTest(fit, contrast=con)
+> go <- goana(qlf, species = "Mm")
+> topGO(go, n=30, truncate=30)
+Term Ont
+GO:0022613 ribonucleoprotein complex b...
+
+BP
+
+N
+396
+
+Up Down
+23
+
+P.Up
+
+P.Down
+
+194 1.00e+00 1.18e-48
+
+GO:0042254
+
+ribosome biogenesis
+
+BP
+
+295
+
+12
+
+157 1.00e+00 2.39e-45
+
+GO:1990904
+
+ribonucleoprotein complex
+
+CC
+
+674
+
+48
+
+261 1.00e+00 1.90e-41
+
+GO:0006364
+
+rRNA processing
+
+BP
+
+213
+
+5
+
+120 1.00e+00 3.71e-38
+
+GO:0016072
+
+rRNA metabolic process
+
+BP
+
+242
+
+11
+
+127 1.00e+00 5.24e-36
+
+GO:0022626
+
+cytosolic ribosome
+
+CC
+
+102
+
+1
+
+73 1.00e+00 1.66e-33
+
+GO:0003723
+
+RNA binding
+
+MF
+
+1003
+
+107
+
+317 1.00e+00 2.83e-30
+
+GO:0003735 structural constituent of r...
+
+MF
+
+156
+
+1
+
+86 1.00e+00 9.21e-27
+
+GO:0034470
+
+ncRNA processing
+
+BP
+
+386
+
+22
+
+152 1.00e+00 3.14e-25
+264 1.00e+00 1.05e-24
+
+GO:0006396
+
+RNA processing
+
+BP
+
+841
+
+72
+
+GO:0005730
+
+nucleolus
+
+CC
+
+820
+
+115
+
+259 9.46e-01 1.12e-24
+
+GO:0034660
+
+ncRNA metabolic process
+
+BP
+
+495
+
+41
+
+179 1.00e+00 1.95e-24
+101 1.00e+00 5.84e-24
+
+GO:0005840
+
+ribosome
+
+CC
+
+215
+
+5
+
+GO:0044391
+
+ribosomal subunit
+
+CC
+
+183
+
+1
+
+91 1.00e+00 6.37e-24
+
+GO:0043043 peptide biosynthetic proces...
+
+BP
+
+600
+
+55
+
+203 1.00e+00 1.94e-23
+
+GO:0022625 cytosolic large ribosomal s...
+
+CC
+
+54
+
+0
+
+43 1.00e+00 1.95e-23
+
+GO:0006412
+
+BP
+
+580
+
+54
+
+198 1.00e+00 2.07e-23
+
+1
+
+52 1.00e+00 1.38e-21
+
+translation
+
+GO:0030684
+
+preribosome
+
+CC
+
+79
+
+GO:0032991
+
+protein-containing complex
+
+CC
+
+4719
+
+715 1025 9.64e-01 8.41e-21
+
+GO:0006518
+
+peptide metabolic process
+
+BP
+
+747
+
+77
+
+231 1.00e+00 9.65e-21
+
+GO:0043604
+
+amide biosynthetic process
+
+BP
+
+696
+
+70
+
+219 1.00e+00 1.02e-20
+
+GO:0070013 intracellular organelle lum...
+
+CC
+
+3955
+
+597
+
+879 9.56e-01 3.81e-20
+
+GO:0031974
+
+membrane-enclosed lumen
+
+CC
+
+3955
+
+597
+
+879 9.56e-01 3.81e-20
+
+GO:0043233
+
+879 9.56e-01 3.81e-20
+
+organelle lumen
+
+CC
+
+3955
+
+597
+
+GO:0042273 ribosomal large subunit bio...
+
+BP
+
+70
+
+3
+
+45 9.99e-01 2.97e-18
+
+GO:0031981
+
+nuclear lumen
+
+CC
+
+3569
+
+559
+
+792 7.05e-01 1.47e-17
+
+GO:0110165
+
+cellular anatomical entity
+
+CC 13340 2258 2392 1.94e-17 2.64e-06
+
+GO:1901566 organonitrogen compound bio...
+
+BP
+
+1354
+
+148
+
+352 1.00e+00 4.28e-17
+
+GO:0098800 inner mitochondrial membran...
+
+CC
+
+137
+
+2
+
+66 1.00e+00 8.05e-17
+
+GO:0034641 cellular nitrogen compound ...
+
+BP
+
+5060
+
+792 1064 7.59e-01 8.79e-17
+
+The row names of the output are the universal identifiers of the GO terms, with one term per
+row. The Term column gives the names of the GO terms. These terms cover three domains
+- biological process (BP), cellular component (CC) and molecular function (MF), as shown
+in the Ont column. The N column represents the total number of genes that are annotated
+with each GO term. The Up and Down columns represent the number of genes with the GO
+term that are significantly up- and down-regulated in this differential expression comparison,
+respectively. The P.Up and P.Down columns contain the p-values for over-representation of the
+GO term across the set of up- and down-regulated genes, respectively. The output table is
+sorted by the minimum of P.Up and P.Down by default.
+The goana function uses the NCBI RefSeq annotation. Therefore, the Entrez Gene identifier
+(ID) should be supplied for each gene as the row names of qlf.
+
+75
+
+edgeR User’s Guide
+
+4.4.11 Gene set testing
+Another downstream step uses the rotation gene set test (ROAST) [41]. Given a set of
+genes, we can test whether the majority of the genes in the set are DE across the contrast
+of interest. It is useful when the specified set contains all genes involved in some pathway or
+process.
+In our case study, suppose we are interested in two GO terms related to cytokinesis. Each
+term will be used to define a set containing all genes that are annotated with that term. The
+names of these terms can be viewed as shown below.
+> library(GO.db)
+> cyt.go <- c("GO:0032465", "GO:0000281")
+> term <- select(GO.db, keys=cyt.go, columns="TERM")
+> term
+GOID
+
+TERM
+
+1 GO:0032465 regulation of cytokinesis
+2 GO:0000281
+
+mitotic cytokinesis
+
+We construct a list of two components, each of which is a vector of Entrez Gene IDs for all
+genes annotated with one of the GO terms. We then convert the Gene IDs into row indices
+of the fit object using the function ids2indices.
+> Rkeys(org.Mm.egGO2ALLEGS) <- cyt.go
+> ind <- ids2indices(as.list(org.Mm.egGO2ALLEGS), row.names(fit))
+
+We proceed to run ROAST on the defined gene sets for the contrast of interest. Suppose
+the comparison of interest is between the virgin and lactating groups in the basal population.
+We use fry to test for multiple gene sets.
+> con <- makeContrasts(B.virgin-B.lactate, levels=design)
+> fr <- fry(y, index=ind, design=design, contrast=con)
+> fr
+NGenes Direction
+
+PValue
+
+FDR PValue.Mixed FDR.Mixed
+
+GO:0032465
+
+74
+
+Up 0.00229 0.00459
+
+5.92e-06
+
+1.18e-05
+
+GO:0000281
+
+66
+
+Up 0.04844 0.04844
+
+1.52e-05
+
+1.52e-05
+
+Each row corresponds to a single gene set, i.e., GO term. The NGenes column gives the
+number of genes in each set. The net direction of change is determined from the significance
+of changes in each direction, and is shown in the Direction column. The PValue provides
+evidence for whether the majority of genes in the set are DE in the specified direction, whereas
+the PValue.Mixed tests for differential expression in any direction. FDRs are computed from
+the corresponding p-values across all sets.
+A barcode plot can be produced with the barcodeplot function to visualize the results for any
+particular set. In this case, visualization is performed for the gene set defined by GO:0032465.
+Here, genes are represented by bars and are ranked from left to right by increasing log-fold
+change. This forms the barcode-like pattern. The line above the barcode shows the relative
+local enrichment of the vertical bars in each part of the plot. This particular plot suggests
+that most genes in this set are up-regulated in the virgin group compared to the lactating
+group.
+
+76
+
+edgeR User’s Guide
+
+> res <- glmQLFTest(fit, contrast=con)
+> barcodeplot(res$table$logFC, ind[[1]], main=names(ind)[1])
+
+10.561
+
+1.281
+
+0.695
+
+0.387
+
+0.167
+
+−0.001
+
+−0.163
+
+−0.340
+
+−0.579
+
+−0.987
+
+−8.885
+
+Up
+
+Down
+
+0 Enrichment 1.7
+
+GO:0032465
+
+Statistic
+
+4.4.12 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+
+[3] LC_MONETARY=English_Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] stats4
+
+stats
+
+graphics
+
+grDevices utils
+
+datasets
+
+methods
+
+[8] base
+other attached packages:
+[1] GO.db_3.15.0
+[4] IRanges_2.31.2
+[7] BiocGenerics_0.43.2
+[10] knitr_1.40
+
+org.Mm.eg.db_3.15.0
+S4Vectors_0.35.3
+edgeR_3.39.6
+BiocStyle_2.25.0
+
+AnnotationDbi_1.59.1
+Biobase_2.57.1
+limma_3.53.6
+
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+XVector_0.37.1
+[4] compiler_4.2.1
+
+BiocManager_1.30.18
+
+GenomeInfoDb_1.33.7
+highr_0.9
+
+[7] zlibbioc_1.43.0
+[10] statmod_1.4.37
+
+bitops_1.0-7
+digest_0.6.29
+
+tools_4.2.1
+bit_4.0.4
+
+[13] evaluate_0.16
+
+RSQLite_2.2.16
+
+memoise_2.0.1
+
+77
+
+edgeR User’s Guide
+
+[16] lattice_0.20-45
+[19] rlang_1.0.5
+[22] yaml_2.3.5
+
+4.5
+
+pkgconfig_2.0.3
+
+png_0.1-7
+
+cli_3.3.0
+xfun_0.32
+
+DBI_1.1.3
+fastmap_1.1.0
+
+[25] GenomeInfoDbData_1.2.8 stringr_1.4.1
+[28] Biostrings_2.65.3
+vctrs_0.4.1
+
+httr_1.4.4
+locfit_1.5-9.6
+
+[31] bit64_4.0.5
+[34] rmarkdown_2.17
+
+grid_4.2.1
+blob_1.2.3
+
+R6_2.5.1
+
+[37] splines_4.2.1
+
+htmltools_0.5.3
+
+magrittr_2.0.3
+KEGGREST_1.37.3
+
+[40] stringi_1.7.8
+[43] crayon_1.5.1
+
+RCurl_1.98-1.8
+
+cachem_1.0.6
+
+Differential splicing after Pasilla knockdown
+
+4.5.1 Introduction
+The RNA-Seq data of this case study was produced by Brooks et al [2]. Drosophila melanogaster
+was used as a model system to study the proteins NOVA1 and NOVA2 which are known to
+regulate splicing in mammals. In particular, an RNA interference system (RNAi) was used to
+knock down the expression of the D. melanogaster ortholog of NOVA1 and NOVA2, which is
+Pasilla.
+The experiment compared treated and untreated cells from the S2-DRSC cell line. In this
+case study we are interested in exons and genes that are differentially expressed after Pasilla
+knockdown, as well as genes that are differentially spliced in the knockdown samples as
+compared to wildtype.
+
+4.5.2 RNA-Seq samples
+The RNA-Seq data of the six samples were deposited on GEO http://www.ncbi.nlm.nih.gov/
+geo. The GEO accession numbers and titles were prepared in a csv file:
+> library(edgeR)
+> GEO <- readTargets("GEO-samples.csv", sep=",")
+> GEO
+GEO
+
+Title Pasilla
+S2_DRSC_Untreated-1
+S2_DRSC_Untreated-3
+
+Normal
+
+S2_DRSC_Untreated-4
+4 GSM461179 S2_DRSC_CG8144_RNAi-1
+
+Normal
+
+5 GSM461180 S2_DRSC_CG8144_RNAi-3
+6 GSM461181 S2_DRSC_CG8144_RNAi-4
+
+Down
+
+1 GSM461176
+2 GSM461177
+3 GSM461178
+
+Normal
+Down
+Down
+
+There are three untreated biological samples, in which Pasilla should be expressed at normal
+levels, and three treated biological samples, in which Pasilla should be expressed at reduced
+levels.
+
+78
+
+edgeR User’s Guide
+
+While GEO records the sample information, the sequencing data file are actually held on the
+NCBI Short Read Archive (SRA). The RNA samples were sequenced on an Illumina Genome
+Analyzer II. Multiple sequencing runs were used for several of the samples, resulting in a total
+of 20 SRA files:
+> SRA <- readTargets("SRA-Files.csv", sep=",")
+> SRA
+SRA
+
+GEO
+
+1
+
+SRR031708 GSM461176
+
+2
+
+SRR031709 GSM461176
+
+3
+
+SRR031710 GSM461176
+
+4
+
+SRR031711 GSM461176
+
+5
+
+SRR031712 GSM461176
+
+6
+
+SRR031713 GSM461176
+
+7
+
+SRR031714 GSM461177
+
+8
+
+SRR031715 GSM461177
+
+9
+
+SRR031716 GSM461178
+
+10 SRR031717 GSM461178
+
+Title
+S2_DRSC_Untreated-1
+S2_DRSC_Untreated-1
+
+RunDate FlowCellID Type
+7/15/08
+
+308T2AAXX
+
+SE
+
+7/15/08
+
+308T2AAXX
+
+SE
+
+S2_DRSC_Untreated-1
+S2_DRSC_Untreated-1
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+S2_DRSC_Untreated-1
+S2_DRSC_Untreated-1
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+S2_DRSC_Untreated-3 11/14/08
+S2_DRSC_Untreated-3 12/23/08
+
+30MNEAAXX
+
+PE
+
+30M2BAAXX
+
+PE
+
+S2_DRSC_Untreated-4 12/23/08
+S2_DRSC_Untreated-4 12/23/08
+
+30M2BAAXX
+
+PE
+
+30M2BAAXX
+
+PE
+
+11 SRR031718 GSM461179 S2_DRSC_CG8144_RNAi-1
+12 SRR031719 GSM461179 S2_DRSC_CG8144_RNAi-1
+
+7/15/08
+
+308T2AAXX
+
+SE
+
+7/18/08
+
+308UEAAXX
+
+SE
+
+13 SRR031720 GSM461179 S2_DRSC_CG8144_RNAi-1
+14 SRR031721 GSM461179 S2_DRSC_CG8144_RNAi-1
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+15 SRR031722 GSM461179 S2_DRSC_CG8144_RNAi-1
+16 SRR031723 GSM461179 S2_DRSC_CG8144_RNAi-1
+
+8/15/08
+
+30AYWAAXX
+
+SE
+
+8/21/08
+
+308A0AAXX
+
+SE
+
+17 SRR031724 GSM461180 S2_DRSC_CG8144_RNAi-3 12/23/08
+18 SRR031725 GSM461180 S2_DRSC_CG8144_RNAi-3 12/23/08
+
+30M2BAAXX
+
+PE
+
+30M2BAAXX
+
+PE
+
+19 SRR031726 GSM461181 S2_DRSC_CG8144_RNAi-4 12/23/08
+20 SRR031727 GSM461181 S2_DRSC_CG8144_RNAi-4 12/23/08
+
+30M2BAAXX
+
+PE
+
+30M2BAAXX
+
+PE
+
+ReadLength
+1
+
+45
+
+2
+
+45
+
+3
+
+45
+
+4
+
+45
+
+5
+
+45
+
+6
+
+45
+
+7
+
+37
+
+8
+
+37
+
+9
+
+37
+
+10
+
+37
+
+11
+
+45
+
+12
+
+45
+
+13
+
+45
+
+14
+
+45
+
+15
+
+45
+
+16
+
+45
+
+17
+
+37
+
+18
+
+37
+
+19
+
+37
+
+20
+
+37
+
+79
+
+edgeR User’s Guide
+
+The last two columns of the above target file indicate whether the samples are single end
+(SE) sequencing with 45 base-pair reads or paired end (PE) sequencing with 37 bp reads.
+
+4.5.3 Read alignment and processing
+The SRA format files were first converted to FASTQ format using the SRA Toolkit. Then an
+index file of the D. melanogaster reference genome was built in Rsubread[19] using the FASTA
+files downloaded from ftp://ftp.ncbi.nlm.nih.gov/genomes/Drosophila_melanogaster/RELEASE_
+5_48. Finally, reads were aligned to the reference D. melanogaster genome using Rsubread.
+Next we counted the number of reads or fragments overlapping each annotated exon of
+each gene. GFF files containing gene and exon annotation were downloaded from ftp://ftp.
+ncbi.nlm.nih.gov/genomes/Drosophila_melanogaster/RELEASE_5_48. The five *.gff files, one
+for each chromosome, were concatenated into one file, and repeated exons instances of the
+same exon (same start and stop position) were removed to create a data frame of start/stop
+positions called unique.gff. The single end (SE) reads were counted by:
+> fc_SE <- featureCounts(SE_bam_files, annot.ext="unique.gff",
++
+
+isGTFAnnotationFile=TRUE, GTF.featureType="exon", GTF.attrType="ID",
+
++
+
+useMetaFeatures=FALSE, allowMultiOverlap=TRUE)
+
+where SE_bam_files is a vector of BAM file names for the SE reads. The paired end (PE)
+reads were counted by:
+> fc_PE <- featureCounts(PE_bam_files, annot.ext="unique.gff",
++
+
+isGTFAnnotationFile=TRUE, GTF.featureType="exon", GTF.attrType="ID",
+
++
+
+useMetaFeatures=FALSE, allowMultiOverlap=TRUE, isPairedEnd=TRUE)
+
+where PE_bam_files is a vector of BAM file names for the PE reads.
+
+4.5.4 Count loading and annotation
+We create a DGEList object as follows
+> y.all <- DGEList(counts=cbind(fc_SE$counts, fc_PE$counts), genes=fc_SE$annotation)
+> dim(y.all)
+[1] 74184
+
+20
+
+> head(y.all$genes)
+GeneID
+138088
+138087
+138089
+138086
+138091
+138092
+
+Chr Start
+End Strand Length
+30970 NC_004354.3 138094 139379
+1286
+30970 NC_004354.3 139445 139611
+167
+30970 NC_004354.3 139445 139889
+30970 NC_004354.3 139713 139889
+
+-
+
+177
+
+30971 NC_004354.3 140011 141629
+30971 NC_004354.3 142415 144271
+
++
+
+1619
+
++
+
+1857
+
+445
+
+The annotation includes Entrez ID and the length, chromosome and start and stop position
+of each exon. We resort the samples back to original SRA order and collapse the data so
+that there is a single column for each GEO sample by summing the counts over the technical
+replicates:
+
+80
+
+edgeR User’s Guide
+
+> y.all <- y.all[, SRA$SRA]
+> y <- sumTechReps(y.all, ID=SRA$GEO)
+> y$samples
+group lib.size norm.factors
+GSM461176
+
+1 31007529
+
+1
+
+GSM461177
+
+1 13040952
+
+1
+
+GSM461178
+
+1 15030819
+
+1
+
+GSM461179
+
+1 28143539
+
+1
+
+GSM461180
+
+1 14901292
+
+1
+
+GSM461181
+
+1 16264066
+
+1
+
+> colnames(y) <- c("N1","N3","N4","D1","D3","D4")
+
+Annotation for D. melanogaster genes was downloaded from ftp://ftp.ncbi.nlm.nih.gov/gene/
+DATA/GENE_INFO/Invertebrates. We now add selected annotation columns to the DGEList
+object:
+> ncbi.L1 <- readLines("Drosophila_melanogaster.gene_info", n = 1)
+> ncbi <- read.delim("Drosophila_melanogaster.gene_info", skip=1,
++
+
+header=FALSE, stringsAsFactors=FALSE)
+
+> ncbi.colname <- unlist(strsplit(substring(ncbi.L1, 10, 234), ' '))
+> colnames(ncbi) <- ncbi.colname
+> m <- match(y$genes$GeneID, ncbi$GeneID)
+> y$genes$Chr <- ncbi$chromosome[m]
+> y$genes$Symbol <- ncbi$Symbol[m]
+> y$genes$Strand <- NULL
+> head(y$genes)
+GeneID Chr
+
+Start
+
+End Length Symbol
+
+138088
+
+30970
+
+X 138094 139379
+
+1286 CG3038
+
+138087
+
+30970
+
+X 139445 139611
+
+167 CG3038
+
+138089
+
+30970
+
+X 139445 139889
+
+445 CG3038
+
+138086
+
+30970
+
+X 139713 139889
+
+177 CG3038
+
+138091
+
+30971
+
+X 140011 141629
+
+1619
+
+G9a
+
+138092
+
+30971
+
+X 142415 144271
+
+1857
+
+G9a
+
+4.5.5 Filtering and normalization
+Here, an exon is only retained if it is expressed in a minimum number of samples:
+> Pasilla <- factor(GEO$Pasilla, levels=c("Normal","Down"))
+> keep <- filterByExpr(y, group=Pasilla)
+> table(keep)
+keep
+FALSE
+
+TRUE
+
+34062 40122
+> y <- y[keep, , keep.lib.sizes=FALSE]
+
+TMM normalization is performed to eliminate composition biases between libraries.
+
+81
+
+edgeR User’s Guide
+
+> y <- calcNormFactors(y)
+> y$samples
+group lib.size norm.factors
+N1
+
+1 30930664
+
+0.949
+
+N3
+
+1 12991065
+
+1.030
+
+N4
+
+1 14943938
+
+0.978
+
+D1
+
+1 28053939
+
+1.004
+
+D3
+
+1 14799544
+
+1.025
+
+D4
+
+1 16206394
+
+1.016
+
+4.5.6 Data exploration
+The data can be explored by generating multi-dimensional scaling (MDS) plots. This visualizes the differences between the expression profiles of different samples in two dimensions.
+
+1.0
+
+> plotMDS(y)
+
+D4
+
+0.0
+
+0.5
+
+D1
+
+−0.5
+−1.0
+
+Leading logFC dim 2 (25%)
+
+D3
+
+N1
+
+N4
+N3
+−1.0
+
+−0.5
+
+0.0
+
+0.5
+
+1.0
+
+1.5
+
+2.0
+
+Leading logFC dim 1 (52%)
+
+The MDS plot shows clear separation of the Pasilla down vs normal samples, but also a batch
+effect associated with sequencing type and date.
+
+4.5.7 The design matrix
+To account for the batch effect observed from the MDS plot, we create a design matrix as
+follows:
+> Batch <- factor(c(1,3,4,1,3,4))
+> Pasilla <- factor(GEO$Pasilla, levels=c("Normal","Down"))
+> design <- model.matrix(~ Batch + Pasilla)
+> design
+(Intercept) Batch3 Batch4 PasillaDown
+
+82
+
+edgeR User’s Guide
+
+1
+
+1
+
+0
+
+0
+
+0
+
+2
+
+1
+
+1
+
+0
+
+0
+
+3
+
+1
+
+0
+
+1
+
+0
+
+4
+
+1
+
+0
+
+0
+
+1
+
+5
+
+1
+
+1
+
+0
+
+1
+
+6
+
+1
+
+0
+
+1
+
+1
+
+attr(,"assign")
+[1] 0 1 1 2
+attr(,"contrasts")
+attr(,"contrasts")$Batch
+[1] "contr.treatment"
+attr(,"contrasts")$Pasilla
+[1] "contr.treatment"
+
+4.5.8 Estimating the dispersion
+We estimate NB dispersions using the estimateDisp function. The estimated dispersions can
+be visualized with plotBCV.
+> y <- estimateDisp(y, design, robust=TRUE)
+> y$common.dispersion
+[1] 0.0145
+> plotBCV(y)
+
+Note that only the trended dispersion is used under the quasi-likelihood (QL) pipeline. The
+tagwise and common estimates are shown here but will not be used further.
+For the QL dispersions, estimation can be performed using the glmQLFit function. The results
+can be visualized with the plotQLDisp function.
+
+83
+
+edgeR User’s Guide
+
+> fit <- glmQLFit(y, design, robust=TRUE)
+> plotQLDisp(fit)
+
+4.5.9 Differential expression
+We test for differentially expressed exons between Pasilla knockdown and normal using the
+QL F-test.
+> qlf <- glmQLFTest(fit, coef=4)
+
+The top set of most significant exons can be examined with topTags. Here, a positive log-fold
+change represents exons that are up in Pasilla knockdown over normal. Multiplicity correction
+is performed by applying the Benjamini-Hochberg method on the p-values, to control the false
+discovery rate (FDR).
+> topTags(qlf)
+Coefficient:
+
+PasillaDown
+
+GeneID Chr
+
+Start
+
+End Length
+
+150709
+
+32007
+
+X 10674926 10676128
+
+1203
+
+150713
+
+32007
+
+X 10675026 10676128
+
+150697
+
+32008
+
+X 10672987 10673728
+
+91614
+
+42865
+
+107856
+150702
+150695
+
+32008
+
+70750
+
+44258
+
+5271691
+
+11333
+
+44548
+
+2R
+
+6407125
+
+96434
+
+43230
+
+3R 22695915 22696094
+
+Symbol logFC logCPM
+
+F
+
+sesB -3.26
+
+7.21 944
+
+1103
+
+sesB -3.26
+
+7.21 943
+
+742
+
+Ant2
+
+2.85
+
+6.14 851
+
+3R 19970915 19971592
+
+678
+
+Kal1 -4.43
+
+3.81 754
+
+44030
+
+3L
+
+2562843
+
+912
+
+msn -2.46
+
+5.59 601
+
+32008
+
+X 10674230 10674694
+
+465
+
+Ant2
+
+2.96
+
+4.55 570
+
+X 10674230 10674559
+
+330
+
+Ant2
+
+2.95
+
+4.54 569
+
+3R
+
+5272628
+
+938
+
+6408782
+
+1658
+
+PValue
+
+2561932
+
+ps -2.28
+lola
+
+5.95 567
+
+2.25
+
+6.14 558
+
+180 BM-40-SPARC -2.28
+
+8.54 536
+
+FDR
+
+150709 4.58e-15 9.27e-11
+150713 4.62e-15 9.27e-11
+150697 9.96e-15 1.33e-10
+
+84
+
+edgeR User’s Guide
+
+91614
+
+2.45e-14 2.46e-10
+
+107856 1.32e-13 1.01e-09
+150702 1.95e-13 1.01e-09
+150695 1.98e-13 1.01e-09
+70750
+
+2.03e-13 1.01e-09
+
+11333
+
+2.27e-13 1.01e-09
+
+96434
+
+3.05e-13 1.15e-09
+
+The total number of DE exons in each direction at a FDR of 5% can be examined with
+decideTests.
+> is.de <- decideTests(qlf, p.value=0.05)
+> summary(is.de)
+PasillaDown
+Down
+
+2113
+
+NotSig
+
+36216
+
+Up
+
+1793
+
+4.5.10 Alternative splicing
+We detect alternative splicing by testing for differential exon usage between Pasilla knockdown
+and normal in each gene.
+> sp <- diffSpliceDGE(fit, coef=4, geneid="GeneID", exonid="Start")
+Total number of exons:
+
+40122
+
+Total number of genes:
+
+8765
+
+Number of genes with 1 exon:
+
+1786
+
+Mean number of exons in a gene:
+
+5
+
+Max number of exons in a gene:
+
+63
+
+Two testing methods at the gene-level are provided. The Simes’ method is likely to be more
+powerful when only a minority of the exons for a gene are differentially spliced. The F-tests
+are likely to be powerful for genes in which several exons are differentially spliced.
+The top spliced genes under the Simes’ method are shown below:
+> topSpliceDGE(sp, test="Simes", n=20)
+GeneID Chr
+
+Symbol NExons
+trol
+
+P.Value
+
+FDR
+
+141235
+
+45320
+
+X
+
+46 4.35e-31 3.03e-27
+
+11214
+
+44548
+
+2R
+
+lola
+
+32 2.81e-30 9.80e-27
+
+95956
+
+44448
+
+3R
+
+scrib
+
+35 1.36e-20 3.17e-17
+
+107810
+
+44030
+
+3L
+
+msn
+
+24 2.34e-18 3.86e-15
+
+19880
+
+36773
+
+2R
+
+Dg
+
+15 2.76e-18 3.86e-15
+
+16060
+
+36542
+
+2R
+
+shot
+
+38 1.75e-17 2.04e-14
+
+82117
+
+42130
+
+3R
+
+osa
+
+17 3.54e-17 3.53e-14
+
+131170
+
+40205
+
+3L
+
+CG42674
+
+17 2.05e-15 1.79e-12
+
+32242
+
+37893
+
+2R
+
+slik
+
+19 3.43e-15 2.66e-12
+
+163416
+
+32817
+
+X CrebB-17A
+
+13 2.06e-14 1.44e-11
+
+110493
+
+38491
+
+3L
+
+ens
+
+17 7.35e-14 4.66e-11
+
+150694
+
+32008
+
+X
+
+Ant2
+
+5 1.15e-13 6.66e-11
+
+85
+
+edgeR User’s Guide
+
+41795
+
+3771968
+
+2L
+
+Msp-300
+
+35 1.22e-12 6.52e-10
+
+115767
+
+38879
+
+3L
+
+pbl
+
+12 4.21e-12 2.10e-09
+
+2032
+
+2768716
+
+2R
+
+mim
+
+26 4.70e-12 2.19e-09
+
+166094
+
+33098
+
+X
+
+CG32521
+
+9 2.06e-11 8.97e-09
+
+150710
+
+32007
+
+X
+
+sesB
+
+7 2.70e-11 1.11e-08
+
+52823
+
+34652
+
+2L
+
+vir-1
+
+7 6.88e-11 2.67e-08
+
+526
+
+35494
+
+2R
+
+laccase2
+
+10 2.05e-10 7.52e-08
+
+85970
+
+42428
+
+3R
+
+Stat92E
+
+14 4.55e-10 1.59e-07
+
+The top spliced genes identified by F-tests are shown below:
+> topSpliceDGE(sp, test="gene", n=20)
+GeneID Chr
+141235
+
+45320
+
+X
+
+11214
+
+44548
+
+41795
+
+3771968
+
+95956
+
+Symbol NExons gene.F
+
+P.Value
+
+FDR
+
+trol
+
+46
+
+50.44 1.62e-52 1.13e-48
+
+2R
+
+lola
+
+32
+
+38.14 4.33e-34 1.51e-30
+
+2L
+
+Msp-300
+
+35
+
+22.22 1.90e-28 4.41e-25
+
+44448
+
+3R
+
+scrib
+
+35
+
+16.93 1.86e-24 3.25e-21
+
+16060
+
+36542
+
+2R
+
+shot
+
+38
+
+11.08 6.70e-20 9.36e-17
+
+32242
+
+37893
+
+2R
+
+slik
+
+19
+
+25.32 1.92e-18 2.23e-15
+
+166094
+
+33098
+
+X
+
+CG32521
+
+9
+
+55.87 4.84e-15 4.83e-12
+
+19880
+
+36773
+
+2R
+
+Dg
+
+15
+
+21.55 3.21e-14 2.80e-11
+
+2032
+
+2768716
+
+2R
+
+mim
+
+26
+
+10.48 4.74e-14 3.67e-11
+
+150694
+
+32008
+
+X
+
+Ant2
+
+5 107.73 4.59e-13 3.20e-10
+
+107810
+
+44030
+
+3L
+
+msn
+
+24
+
+10.32 5.55e-13 3.49e-10
+
+82117
+
+42130
+
+3R
+
+osa
+
+17
+
+15.35 5.99e-13 3.49e-10
+
+150710
+
+32007
+
+X
+
+sesB
+
+7
+
+51.72 4.68e-12 2.51e-09
+
+163416
+
+32817
+
+X
+
+CrebB-17A
+
+13
+
+18.41 8.51e-12 4.24e-09
+
+131170
+
+40205
+
+3L
+
+CG42674
+
+17
+
+12.20 3.05e-11 1.42e-08
+
+110493
+
+38491
+
+3L
+
+ens
+
+17
+
+10.63 2.88e-10 1.25e-07
+
+115767
+
+38879
+
+3L
+
+pbl
+
+12
+
+15.79 3.03e-10 1.25e-07
+
+134207
+
+40464
+
+3L
+
+Ten-m
+
+12
+
+15.45 4.06e-10 1.55e-07
+
+36209
+
+33367
+
+2L
+
+CG7337
+
+27
+
+6.62 4.21e-10 1.55e-07
+
+11103
+
+36104
+
+2R G-oalpha47A
+
+13
+
+13.92 4.60e-10 1.61e-07
+
+We plot all the exons for the top two most differentially spliced genes. Exons that are
+individually significant are highlighted.
+> par(mfrow=c(1,2))
+> plotSpliceDGE(sp, geneid="trol", genecol="Symbol")
+> plotSpliceDGE(sp, geneid="lola", genecol="Symbol")
+
+86
+
+edgeR User’s Guide
+
+lola
+
+1.0
+0.5
+0.0
+−0.5
+6369712
+6374902
+6376160
+6377019
+6377677
+6378765
+6383800
+6387703
+6389863
+6392364
+6394928
+6397300
+6398030
+6402519
+6403340
+6405418
+6406208
+6407125
+6409533
+6409533
+6411002
+6412310
+6414072
+6414571
+6419253
+6419544
+6419686
+6420623
+6421081
+6422355
+6428850
+6430410
+
+2417919
+
+2417438
+
+2415567
+
+2407676
+
+2393244
+
+2392055
+
+2390809
+
+2389981
+
+2388437
+
+2386688
+
+2385514
+
+2384489
+
+2380960
+
+2378650
+
+2377519
+
+2376492
+
+2375450
+
+2374767
+
+2371510
+
+2369449
+
+2367693
+
+2366985
+
+2364493
+
+−1.5
+
+logFC (this exon vs the average)
+
+3
+2
+1
+0
+−1
+
+logFC (this exon vs the average)
+
+4
+
+1.5
+
+trol
+
+Exon Start
+
+Exon Start
+
+We can see that a block of five or six exons at the right end of the trol gene are relatively
+lost when Pasilla is down. Most exons in the first half of the gene behave similarly to each
+other. This gene is on the negative strand, so transcription is from right to left. The gene
+trol was identified by Brooks et al [2] to have a novel set of coordinately regulated exons.
+
+4.5.11 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+_
+_
+[3] LC MONETARY=English Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] stats
+
+graphics
+
+grDevices utils
+
+other attached packages:
+[1] edgeR_3.39.6
+limma_3.53.6
+
+datasets
+
+knitr_1.40
+
+methods
+
+base
+
+BiocStyle_2.25.0
+
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+locfit_1.5-9.6
+
+lattice_0.20-45
+
+[4] digest_0.6.29
+[7] evaluate_0.16
+
+grid_4.2.1
+highr_0.9
+
+magrittr_2.0.3
+rlang_1.0.5
+
+[10] stringi_1.7.8
+
+cli_3.3.0
+
+rmarkdown_2.17
+
+87
+
+edgeR User’s Guide
+
+[13] splines_4.2.1
+[16] stringr_1.4.1
+[19] fastmap_1.1.0
+
+statmod_1.4.37
+
+tools_4.2.1
+
+xfun_0.32
+compiler_4.2.1
+
+yaml_2.3.5
+BiocManager_1.30.18
+
+[22] htmltools_0.5.3
+
+4.5.12 Acknowledgements
+Thanks to Yang Liao for mapping the reads and running featureCounts and Yifang Hu for
+the initial analysis of the data.
+
+4.6
+
+CRISPR-Cas9 knockout screen analysis
+
+4.6.1 Introduction
+Dai et al. (2014) [7] describe the use of edgeR to analyze data from pooled genetic screens
+utilizing either shRNAs or CRISPR-Cas9 to disrupt gene expression in a population of cells.
+In this case study we analyze data from a pooled screen that uses CRISPR-Cas9 (clustered
+regularly interspaced short palindromic repeats-associated nuclease Cas9) knockout technology. In this example, a library of around 64,000 sgRNAs (as used in Shalem et al. 2014 [37])
+were screened to look for genes that may lead to resistance from a particular drug. This
+unpublished data set has been anonymised.
+
+4.6.2 Sequence processing
+Multiple single guide RNAs (sgRNAs) per gene (generally between 3-6) were included in the
+screen. Below we read in the raw sequences from the paired end fastq files screen4_R1.fastq
+and screen4_R2.fastq using the processAmplicons function in edgeR. This screen employed
+a dual indexing strategy where the first 8 bases from each pair of reads contained an index
+sequence that uniquely identifies which sample a particular sgRNA sequence originated from.
+Matches between sample indexes and sgRNAs listed in the files Samples4.txt and sgRNAs4.txt
+are identified by processAmplicons to produce a DGEList of counts.
+> library(edgeR)
+> sampleanno <- read.table("Samples4.txt", header=TRUE, sep="\t")
+> sgseqs <- read.table("sgRNAs4.txt", header=TRUE, sep="\t")
+> x <- processAmplicons("screen4_R1.fastq", readfile2="screen4_R2.fastq",
++
+
+barcodefile="Samples4.txt", hairpinfile="sgRNAs4.txt",
+
++
+
+verbose=TRUE)
+
+Note that this dual indexing strategy requires an additional column named ‘SequencesRev’ in
+the file that contains the sample annotation information. Also, readFile2 must be specified.
+The output DGEList is available here.
+
+4.6.3 Filtering and data exploration
+We next filter out sgRNAs and samples with low numbers of reads. Need a CPM greater
+than 5 in 15 or more samples to keep sgRNAs, and at least 100,000 reads to keep a given
+sample.
+
+88
+
+edgeR User’s Guide
+
+> table(x$samples$group)
+
+Drug NoDrug
+40
+
+32
+
+> selr <- rowSums(cpm(x$counts)>5)>=15
+> selc <- colSums(x$counts)>=100000
+> x <- x[selr,selc]
+
+We plot number of sgRNAs that could be matched per sample and total for each sgRNA
+across all samples .
+> cols <- as.numeric(x$samples$group)+2
+> par(mfrow=c(2,1))
+> barplot(colSums(x$counts), las=2, main="Counts per index",
++
+
+col=cols, cex.names=0.5, cex.axis=0.8)
+
+> legend("topright", legend=c("Control", "Drug"), col=c(3,4), pch=15)
+> barplot(rowSums(x$counts), las=2, main="Counts per sgRNA",
++
+
+axisnames=FALSE, cex.axis=0.8)
+
+A multidimensional scaling plot was generated to assess the consistency between replicate
+samples. There is a clear separation between the two infections, indicating the need to
+incorporate an effect for this in the GLM.
+> cols2 <- x$samples$Infection
+> par(mfrow=c(1,2))
+> plotMDS(x, col=cols, main="MDS Plot: drug treatment colours")
+> legend("topleft", legend=c("Control", "Drug"), col=c(3,4), pch=15)
+> plotMDS(x, col=cols2, main="MDS Plot: infection colours")
+> legend("topleft", legend=c("Inf#1", "Inf#2"), col=c(1,2), pch=15)
+
+89
+
+edgeR User’s Guide
+
+4.6.4 The design matrix and dispersion estimation
+A design matrix is set up for the GLM analysis, and the sgRNA-specific variation is estimated
+and plotted (while taking into account both drug treatment and infection number).
+> treatment <- relevel(as.factor(x$samples$group), "NoDrug")
+> infection <- as.factor(x$samples$Infection)
+> des <- model.matrix(~treatment+infection)
+> des[1:5,]
+(Intercept) treatmentDrug infection2
+1
+
+1
+
+0
+
+0
+
+2
+
+1
+
+0
+
+0
+
+3
+
+1
+
+0
+
+0
+
+4
+
+1
+
+0
+
+0
+
+5
+
+1
+
+0
+
+0
+
+> colnames(des)[2:3] <- c("Drug", "Infection2")
+
+We estimate the dispersions and examine them in a BCV plot.
+> xglm <- estimateDisp(x, des)
+> sqrt(xglm$common.disp)
+[1] 0.258
+> plotBCV(xglm, main="BCV Plot")
+
+90
+
+edgeR User’s Guide
+
+4.6.5 Differential representation analysis
+We use the function glmFit to fit the sgRNA-specific models and glmLRT to do the testing
+between the drug treated and control samples. The top ranked sgRNAs are listed using the
+topTags function.
+> fit <- glmFit(xglm, des)
+> lrt <- glmLRT(fit, coef=2)
+> topTags(lrt)
+Coefficient:
+
+Drug
+
+sgRNA816
+
+sgRNA816 TCCGAACTCCCCCTTCCCGA
+
+269
+
+4.36
+
+7.32 699 4.54e-154
+
+sgRNA4070
+
+sgRNA4070 GTTGTGCTCAGTACTGACTT
+
+1252
+
+2.94
+
+8.00 659 2.14e-145
+
+sgRNA6351
+
+sgRNA6351 AAAAACGTATCTATTTTTAC
+
+1957
+
+3.37
+
+6.34 422
+
+8.56e-94
+
+sgRNA12880 sgRNA12880 CTGCACCGAAGAGAGCTGCT
+
+3979
+
+2.83
+
+7.04 322
+
+5.45e-72
+
+sgRNA23015 sgRNA23015 CAATTTGATCTCTTCTACTG
+
+6714
+
+3.16
+
+4.83 233
+
+1.35e-52
+
+sgRNA62532 sgRNA62532 AAACACGTCCAGTGCAGCCC 19612
+
+2.79
+
+4.91 216
+
+6.18e-49
+
+sgRNA38819 sgRNA38819 TACGTTGTCGGGCGCCGCCA 11531
+
+2.42
+
+6.54 204
+
+2.96e-46
+
+sgRNA3887
+
+2.28
+
+5.33 203
+
+4.05e-46
+
+ID
+
+Sequences
+
+Gene logFC logCPM
+
+LR
+
+PValue
+
+sgRNA3887 AACGCTGGACTCGAATGGCC
+
+1194
+
+sgRNA19299 sgRNA19299 GGGGTCTTACCCGAGGCTCC
+
+5732
+
+1.94
+
+5.63 202
+
+7.67e-46
+
+sgRNA52924 sgRNA52924 CCACCGCGTTCCACTTCTTG 16395
+
+2.87
+
+6.64 193
+
+5.54e-44
+
+FDR
+sgRNA816
+
+2.56e-149
+
+sgRNA4070
+
+6.04e-141
+
+sgRNA6351
+
+1.61e-89
+
+sgRNA12880
+
+7.68e-68
+
+sgRNA23015
+
+1.52e-48
+
+sgRNA62532
+
+5.81e-45
+
+sgRNA38819
+
+2.38e-42
+
+sgRNA3887
+
+2.85e-42
+
+sgRNA19299
+
+4.80e-42
+
+sgRNA52924
+
+3.12e-40
+
+91
+
+edgeR User’s Guide
+
+sgRNAs with FDR < 0.0001 [1] and log-fold-change ≥ 1 are highlighted on a plot of logfold-change versus log-counts-per-millions by the plotSmear function. Since this is a positive
+screen, we highlight over-represented sgRNAs (i.e. those with positive log-fold-changes) since
+the model is parameterized to compare drug treatment versus control (coefficient 2 in the
+design matrix).
+> thresh <- 0.0001
+> lfc <- 1
+> top4 <- topTags(lrt, n=Inf)
+> top4ids <- top4$table[top4$table$FDR<thresh & top4$table$logFC>=lfc,1]
+> plotSmear(lrt, de.tags=top4ids, pch=20, cex=0.6,
++
+
+main="Drug treatment vs Control")
+
+> abline(h=c(-1, 0, 1), col=c("dodgerblue","yellow","dodgerblue"), lty=2)
+
+4.6.6 Gene set tests to summarize over multiple sgRNAs targeting
+the same gene
+We finish this analysis by summarising data across multiple sgRNAs that target the same
+gene in order to get a gene-by-gene ranking, rather than a sgRNA-specific one. The camera
+gene-set test [42] is used for this purpose. For this analysis, the collection of sgRNAs that
+target a specific gene can be regarded as a ‘set’. In the code below, we restrict our analysis to
+genes with more than 3 sgRNAs. A barcode plot, highlighting the rank of sgRNAs for a given
+gene relative to the entire data set is generated for the top-ranked gene (11531). Abundance
+of sgRNAs targeting this gene tend to increase with drug treatment (FDR=0.0003).
+> genesymbols <- x$genes[,3]
+> genesymbollist <- list()
+> unq <- unique(genesymbols)
+> unq <- unq[!is.na(unq)]
+> for(i in unq) {
++
+
+sel <- genesymbols==i & !is.na(genesymbols)
+
++
+
+if(sum(sel)>3)
+
+92
+
+edgeR User’s Guide
+
++
+
+genesymbollist[[i]] <- which(sel)
+
++ }
+> camera.res <- camera(xglm, index=genesymbollist, des, contrast=2)
+> camera.res[1:10,]
+NGenes Direction
+
+PValue
+
+FDR
+
+19612
+
+5
+
+Up 1.44e-08 7.92e-05
+
+8808
+
+4
+
+Up 9.36e-06 2.33e-02
+
+3979
+
+4
+
+Up 1.34e-05 2.33e-02
+
+8370
+
+4
+
+Up 1.69e-05 2.33e-02
+
+11531
+
+4
+
+Up 2.33e-05 2.57e-02
+
+10386
+
+4
+
+Up 1.40e-04 1.14e-01
+
+2005
+
+4
+
+Up 1.45e-04 1.14e-01
+
+4086
+
+4
+
+Up 1.95e-04 1.34e-01
+
+10784
+
+4
+
+Up 2.26e-04 1.38e-01
+
+11412
+
+5
+
+Up 6.93e-04 3.82e-01
+
+We make a barcode plot for an example (Gene 11531) that ranks highly.
+> barcodeplot(lrt$table$logFC,index=genesymbollist[[11531]],
++
+
+main="Barcodeplot for Gene 11531",
+
++
+
+labels=c("Negative logFC", "Positive logFC"),
+
++
+
+quantile=c(-0.5,0.5))
+
+4.36
+
+0.43
+
+0.26
+
+0.15
+
+0.06
+
+−0.02
+
+−0.10
+
+−0.19
+
+−0.30
+
+−0.47
+
+−2.34
+
+Positive logFC
+
+Negative logFC
+
+0 Enrichment 3.7
+
+Barcodeplot for Gene 11531
+
+Statistic
+
+The raw data from this example and several other case studies for this technology can be
+found at http://bioinf.wehi.edu.au/shRNAseq/.
+
+4.6.7 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+
+93
+
+edgeR User’s Guide
+
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+_
+_
+[3] LC MONETARY=English Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] stats
+
+graphics
+
+grDevices utils
+
+other attached packages:
+[1] edgeR_3.39.6
+limma_3.53.6
+
+datasets
+
+knitr_1.40
+
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+locfit_1.5-9.6
+
+methods
+
+base
+
+BiocStyle_2.25.0
+
+[4] digest_0.6.29
+
+grid_4.2.1
+
+lattice_0.20-45
+magrittr_2.0.3
+
+[7] evaluate_0.16
+[10] stringi_1.7.8
+
+highr_0.9
+cli_3.3.0
+
+rlang_1.0.5
+rmarkdown_2.17
+
+[13] splines_4.2.1
+[16] xfun_0.32
+
+tools_4.2.1
+yaml_2.3.5
+
+stringr_1.4.1
+fastmap_1.1.0
+
+[19] compiler_4.2.1
+
+BiocManager_1.30.18 htmltools_0.5.3
+
+4.6.8 Acknowledgements
+Thanks to Dr Sam Wormald from the WEHI for providing the data set used in this case
+study.
+
+4.7
+
+Bisulfite sequencing of mouse oocytes
+
+4.7.1 Introduction
+The bisulfite sequencing (BS-seq) data of this case study is described in Gahurova et al. [13].
+The sequence and count data are publicly available from the Gene Expression Omnibus (GEO)
+at the series accession number GSE86297.
+This study investigates the onset and progression of de novo methylation. Growing oocytes
+from pre-pubertal mouse ovaries (post-natal days 7-18) isolated and sorted into the following,
+non-overlapping size categories: 40-45, 50-55 and 60-65µm with two biological replicates in
+each. Methylation maps were generated by bisulfite conversion of oocyte DNA and Illumina
+sequencing. Reduced representation bisulfite sequencing (RRBS [27]) was applied for focusing
+coverage of CGIs and other GC-rich sequences in all three size classes of oocytes. RRBS reads
+were trimmed to remove poor quality calls and adapters using Trim Galore and mapped to the
+mouse genome GRCm38 assembly by Bismark [17]. This is summarized in the table below.
+> library(edgeR)
+> targets <- read.delim("targets.txt", stringsAsFactors=FALSE)
+> targets
+GEO
+
+Sample Group
+
+File
+
+94
+
+edgeR User’s Guide
+
+1 GSM2299710 40-45um-A
+2 GSM2299711 40-45um-B
+3 GSM2299712 50-55um-A
+
+40um GSM2299710_RRBS_40-45oocyte_LibA.cov.txt.gz
+40um GSM2299711_RRBS_40-45oocyte_LibB.cov.txt.gz
+50um GSM2299712_RRBS_50-55oocyte_LibA.cov.txt.gz
+
+5 GSM2299714 60-65um-A
+
+50um GSM2299713_RRBS_50-55oocyte_LibB.cov.txt.gz
+60um GSM2299714_RRBS_60-65oocyte_LibA.cov.txt.gz
+
+6 GSM2299715 60-65um-B
+
+60um GSM2299715_RRBS_60-65oocyte_LibB.cov.txt.gz
+
+4 GSM2299713 50-55um-B
+
+4.7.2 Reading in the data
+The Bismark outputs of the data include one coverage file of the methylation in CpG context
+for each sample. The coverage file for each of the six samples is available for download at
+GEO. The first six rows of the coverage output for the first sample are shown below.
+> s1 <- read.delim(file="GSM2299710_RRBS_40-45oocyte_LibA.cov.txt.gz",
++
+
+header=FALSE, nrows=6)
+
+> s1
+V1
+
+V2
+
+V3
+
+V4 V5
+
+V6
+
+1
+
+6 3121266 3121266 0.00
+
+0
+
+17
+
+2
+
+6 3121296 3121296 0.00
+
+0
+
+17
+
+3
+
+6 3179319 3179319 1.28
+
+1
+
+77
+
+4
+
+6 3180316 3180316 4.55
+
+1
+
+21
+
+5
+
+6 3182928 3182928 4.33 22
+
+486
+
+6
+
+6 3182937 3182937 5.37 61 1074
+
+The six columns (from left to right) represent: chromosome, start position, end position, methylation proportion in percentage, number of methylated C’s and number of unmethylated C’s. Since the start and end positions of a CpG site from Bismark are the same,
+we can keep only one of them. The last two columns of counts are we will use for the analysis.
+We read in the coverage files of all six samples using readBismark2DGE. A DGEList object
+is created using the count table, and the chromosome number and positions are used for
+annotation.
+> files <- targets$File
+> yall <- readBismark2DGE(files, sample.names=targets$Sample)
+
+The edgeRpackage stores the counts and associated annotation in a DGEList object. There
+is a row for each CpG locus found in any of the files. There are columns of methylated and
+unmethylated counts for each sample. The chromosomes and genomic loci are stored in the
+genes component.
+> yall
+An object of class "DGEList"
+$counts
+40-45um-A-Me 40-45um-A-Un 40-45um-B-Me 40-45um-B-Un 50-55um-A-Me
+6-3121266
+
+0
+
+17
+
+0
+
+4
+
+0
+
+6-3121296
+
+0
+
+17
+
+0
+
+4
+
+0
+
+6-3179319
+
+1
+
+77
+
+0
+
+76
+
+2
+
+6-3180316
+
+1
+
+21
+
+0
+
+0
+
+1
+
+6-3182928
+
+22
+
+486
+
+8
+
+953
+
+7
+
+95
+
+edgeR User’s Guide
+
+50-55um-A-Un 50-55um-B-Me 50-55um-B-Un 60-65um-A-Me 60-65um-A-Un
+6-3121266
+
+17
+
+0
+
+0
+
+3
+
+3
+
+6-3121296
+
+16
+
+0
+
+0
+
+0
+
+6
+43
+
+6-3179319
+
+52
+
+0
+
+7
+
+10
+
+6-3180316
+
+7
+
+0
+
+0
+
+2
+
+4
+
+6-3182928
+
+714
+
+32
+
+1190
+
+10
+
+618
+
+60-65um-B-Me 60-65um-B-Un
+6-3121266
+
+0
+
+11
+
+6-3121296
+
+0
+
+11
+30
+
+6-3179319
+
+3
+
+6-3180316
+
+1
+
+0
+
+6-3182928
+
+12
+
+651
+
+2271667 more rows ...
+$samples
+group lib.size norm.factors
+40-45um-A-Me
+
+1
+
+1231757
+
+1
+
+40-45um-A-Un
+
+1 36263318
+
+1
+
+40-45um-B-Me
+
+1
+
+1719267
+
+1
+
+40-45um-B-Un
+
+1 55600556
+
+1
+
+50-55um-A-Me
+
+1
+
+1
+
+2691638
+
+7 more rows ...
+$genes
+Chr
+
+Locus
+
+6-3121266
+
+6 3121266
+
+6-3121296
+
+6 3121296
+
+6-3179319
+
+6 3179319
+
+6-3180316
+
+6 3180316
+
+6-3182928
+
+6 3182928
+
+2271667 more rows ...
+> dim(yall)
+[1] 2271672
+
+12
+
+We remove the mitochondrial genes as they are usually of less interest.
+> table(yall$genes$Chr)
+
+6
+
+9
+
+17
+
+1
+
+3
+
+111377 120649 101606 140819 108466
+18
+71737
+
+16
+
+7
+
+13
+
+10
+
+2
+
+4
+
+5
+
+11
+
+95196 116980 173357 157628 159979 161754
+
+8
+
+14
+
+19
+
+X
+
+12
+
+15
+
+Y
+
+MT
+
+70964 140225 130786
+
+84974
+
+70614
+
+58361
+
+95580
+
+99646
+
+662
+
+312
+
+> yall <- yall[yall$genes$Chr!="MT", ]
+
+For convenience, we sort the DGEList so that all loci are in genomic order, from chromosome
+1 to chromosome Y.
+> ChrNames <- c(1:19,"X","Y")
+> yall$genes$Chr <- factor(yall$genes$Chr, levels=ChrNames)
+
+96
+
+edgeR User’s Guide
+
+> o <- order(yall$genes$Chr, yall$genes$Locus)
+> yall <- yall[o,]
+
+We now annotate the CpG loci with the identity of the nearest gene. We search for the gene
+transcriptional start site (TSS) closest to each our CpGs:
+> TSS <- nearestTSS(yall$genes$Chr, yall$genes$Locus, species="Mm")
+> yall$genes$EntrezID <- TSS$gene_id
+> yall$genes$Symbol <- TSS$symbol
+> yall$genes$Strand <- TSS$strand
+> yall$genes$Distance <- TSS$distance
+> yall$genes$Width <- TSS$width
+> head(yall$genes)
+Chr
+
+Locus EntrezID Symbol Strand Distance
+
+Width
+
+1-3003886
+
+1 3003886
+
+497097
+
+Xkr4
+
+-
+
+-667612 457017
+
+1-3003899
+
+1 3003899
+
+497097
+
+Xkr4
+
+-
+
+-667599 457017
+
+1-3020877
+
+1 3020877
+
+497097
+
+Xkr4
+
+-
+
+-650621 457017
+
+1-3020891
+
+1 3020891
+
+497097
+
+Xkr4
+
+-
+
+-650607 457017
+
+1-3020946
+
+1 3020946
+
+497097
+
+Xkr4
+
+-
+
+-650552 457017
+
+1-3020988
+
+1 3020988
+
+497097
+
+Xkr4
+
+-
+
+-650510 457017
+
+Here EntrezID, Symbol, Strand and Width are the Entrez Gene ID, symbol, strand and width of
+the nearest gene. Distance is the genomic distance from the CpG to the TSS. Positive values
+means the TSS is downstream of the CpG and negative values means the TSS is upstream.
+
+4.7.3 Filtering and normalization
+We now turn to statistical analysis of differential methylation. Our first analysis will be for
+individual CpG loci.
+CpG loci that have low coverage are removed prior to downstream analysis as they provide
+little information for assessing methylation levels. We sum up the counts of methylated and
+unmethylated reads to get the total read coverage at each CpG site for each sample:
+> Methylation <- gl(2,1,ncol(yall), labels=c("Me","Un"))
+> Me <- yall$counts[, Methylation=="Me"]
+> Un <- yall$counts[, Methylation=="Un"]
+> Coverage <- Me + Un
+> head(Coverage)
+40-45um-A-Me 40-45um-B-Me 50-55um-A-Me 50-55um-B-Me 60-65um-A-Me
+1-3003886
+
+0
+
+0
+
+0
+
+0
+
+3
+
+1-3003899
+
+0
+
+0
+
+0
+
+0
+
+3
+
+1-3020877
+
+84
+
+77
+
+114
+
+21
+
+86
+
+1-3020891
+
+84
+
+78
+
+116
+
+21
+
+86
+
+1-3020946
+
+146
+
+369
+
+210
+
+165
+
+195
+
+1-3020988
+
+38
+
+91
+
+60
+
+94
+
+50
+
+60-65um-B-Me
+1-3003886
+
+0
+
+1-3003899
+
+0
+
+1-3020877
+
+57
+
+1-3020891
+
+57
+
+97
+
+edgeR User’s Guide
+
+1-3020946
+
+168
+
+1-3020988
+
+25
+
+As a conservative rule of thumb, we require a CpG site to have a total count (both methylated
+and unmethylated) of at least 8 in every sample before it is considered in the study.
+> HasCoverage <- rowSums(Coverage >= 8) == 6
+
+This filtering criterion could be relaxed somewhat in principle but the number of CpGs kept
+in the analysis is large enough for our purposes.
+We also filter out CpGs that are never methylated or always methylated as they provide no
+information about differential methylation:
+> HasBoth <- rowSums(Me) > 0 & rowSums(Un) > 0
+> table(HasCoverage, HasBoth)
+HasBoth
+HasCoverage
+
+FALSE
+
+TRUE
+
+FALSE 1601772
+
+295891
+
+TRUE
+
+254912
+
+118785
+
+The DGEList object is subsetted to retain only the non-filtered loci:
+> y <- yall[HasCoverage & HasBoth,, keep.lib.sizes=FALSE]
+
+A key difference between BS-seq and other sequencing data is that the pair of libraries
+holding the methylated and unmethylated reads for a particular sample are treated as a unit.
+To ensure that the methylated and unmethylated reads for the same sample are treated on
+the same scale, we need to set the library sizes to be equal for each pair of libraries. We set
+the library sizes for each sample to be the average of the total read counts for the methylated
+and unmethylated libraries:
+> TotalLibSize <- y$samples$lib.size[Methylation=="Me"] +
++
+
+y$samples$lib.size[Methylation=="Un"]
+
+> y$samples$lib.size <- rep(TotalLibSize, each=2)
+> y$samples
+group lib.size norm.factors
+40-45um-A-Me
+
+1 20854816
+
+1
+
+40-45um-A-Un
+
+1 20854816
+
+1
+
+40-45um-B-Me
+
+1 39584537
+
+1
+
+40-45um-B-Un
+
+1 39584537
+
+1
+
+50-55um-A-Me
+
+1 22644990
+
+1
+
+50-55um-A-Un
+
+1 22644990
+
+1
+
+50-55um-B-Me
+
+1 25264124
+
+1
+
+50-55um-B-Un
+
+1 25264124
+
+1
+
+60-65um-A-Me
+
+1 18974220
+
+1
+
+60-65um-A-Un
+
+1 18974220
+
+1
+
+60-65um-B-Me
+
+1 20462334
+
+1
+
+60-65um-B-Un
+
+1 20462334
+
+1
+
+Other normalization methods developed for RNA-seq data are not required for BS-seq data.
+
+98
+
+edgeR User’s Guide
+
+4.7.4 Data exploration
+The data can be explored by generating multi-dimensional scaling (MDS) plots on the methylation level (M-value) of the CpG sites. The M-value is calcualted by the log of the ratio of
+methylated and unmethylated C’s, which is equivalent to the difference between methylated
+and unmethylated C’s on the log-scale [8]. A prior count of 2 is added to avoid logarithms
+of zero.
+> Me <- y$counts[, Methylation=="Me"]
+> Un <- y$counts[, Methylation=="Un"]
+> M <- log2(Me + 2) - log2(Un + 2)
+> colnames(M) <- targets$Sample
+
+Here M contains the empirical logit methylation level for each CpG site in each sample. We
+have used a prior count of 2 to avoid logarithms of zero.
+Now we can generate a multi-dimensional scaling (MDS) plot to explore the overall differences
+between the methylation levels of the different samples.
+> plotMDS(M, col=rep(1:3, each=2), main="M-values")
+
+2
+
+M−values
+
+60−65um−B
+60−65um−A
+
+−3
+
+−2
+
+−1
+
+0
+
+40−45um−A
+40−45um−B
+
+−4
+
+Leading logFC dim 2 (20%)
+
+1
+
+50−55um−A
+
+50−55um−B
+−4
+
+−2
+
+0
+
+2
+
+4
+
+Leading logFC dim 1 (60%)
+
+Replicate samples cluster together within the 40-45 and 60-65µm categories but are far apart
+in the 50-55µm group. The plot also indicates a huge difference in methylation level between
+the 40-45 and 60-65µm groups.
+
+4.7.5 The design matrix
+One aim of this study is to identify differentially methylated (DM) loci between the different
+cell populations. In edgeR, this can be done by fitting linear models under a specified design
+matrix and testing for corresponding coefficients or contrasts. A basic sample-level design
+matrix can be made as follows:
+> designSL <- model.matrix(~0+Group, data=targets)
+> designSL
+
+99
+
+edgeR User’s Guide
+
+Group40um Group50um Group60um
+1
+
+1
+
+0
+
+0
+
+2
+
+1
+
+0
+
+0
+
+3
+
+0
+
+1
+
+0
+
+4
+
+0
+
+1
+
+0
+
+5
+
+0
+
+0
+
+1
+
+6
+
+0
+
+0
+
+1
+
+attr(,"assign")
+[1] 1 1 1
+attr(,"contrasts")
+attr(,"contrasts")$Group
+[1] "contr.treatment"
+
+The we expand this to the full design matrix modeling the sample and methylation effects:
+> design <- modelMatrixMeth(designSL)
+> design
+Sample1 Sample2 Sample3 Sample4 Sample5 Sample6 Group40um Group50um
+1
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+2
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+3
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+4
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+5
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+1
+
+6
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+0
+
+7
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+1
+
+8
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+0
+
+9
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+10
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+0
+
+11
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+12
+
+0
+
+0
+
+0
+
+0
+
+0
+
+1
+
+0
+
+0
+
+Group60um
+1
+
+0
+
+2
+
+0
+
+3
+
+0
+
+4
+
+0
+
+5
+
+0
+
+6
+
+0
+
+7
+
+0
+
+8
+
+0
+
+9
+
+1
+
+10
+
+0
+
+11
+
+1
+
+12
+
+0
+
+The first six columns represent the sample coverage effects. The last three columns represent
+the methylation levels (in logit units) in the three groups.
+
+4.7.6 Estimating the dispersion
+For simplicity, we only consider the CpG methylation in chromosome 1. We subset the
+coverage files so that they only contain methylation information of the first chromosome.
+
+100
+
+edgeR User’s Guide
+
+> y1 <- y[y$genes$Chr==1, ]
+
+We estimate the NB dispersion for each CpG site using the estimateDisp function. The
+mean-dispersion relationship of BS-seq data has been studied in the past and no apparent
+mean-dispersion trend was observed [10]. Therefore, we would not consider a mean-dependent
+dispersion trend for BS-seq methylation data.
+> y1 <- estimateDisp(y1, design=design, trend="none")
+> y1$common.dispersion
+[1] 0.384
+> summary(y1$prior.df)
+Min. 1st Qu.
+Inf
+
+Inf
+
+Median
+Inf
+
+Mean 3rd Qu.
+
+Max.
+
+Inf
+
+Inf
+
+Inf
+
+The estimated prior degrees of freedom are infinite for all the CpGs, which implies all the
+CpG-wise dispersions are exactly the same as the common dispersion. A BCV plot is often
+useful to visualize the dispersion estimates, but it is not informative in this case.
+
+4.7.7 Differential methylation analysis at CpG loci
+Then we can proceed to testing for differentially methylated CpG sites between different
+groups. We fit NB GLMs for all the CpG loci.
+> fit <- glmFit(y1, design)
+
+We identify differentially methylated CpG loci between the 40-45 and 60-65µm group using
+the likelihood-ratio test. The contrast corresponding to this comparison is constructed using
+the makeContrasts function.
+> contr <- makeContrasts(
++
+
+Group60vs40 = Group60um - Group40um, levels=design)
+
+> lrt <- glmLRT(fit, contrast=contr)
+
+The top set of most significant DMRs can be examined with topTags. Here, positive log-fold
+changes represent CpG sites that have higher methylation level in the 60-65µm group compared to the 40-45µm group. Multiplicity correction is performed by applying the BenjaminiHochberg method on the p-values, to control the false discovery rate (FDR).
+> topTags(lrt)
+Coefficient:
+
+-1*Group40um 1*Group60um
+Chr
+
+Symbol Strand Distance
+
+Width logFC
+
+1-172206751
+
+1 172206751
+
+Locus EntrezID
+18611
+
+Pea15a
+
+-
+
+-53
+
+10077
+
+13.9
+
+1-141992739
+
+1 141992739
+
+75910 4930590L20Rik
+
+-
+
+1336337
+
+86227
+
+11.4
+
+1-131987595
+
+1 131987595
+
+212980
+
+Slc45a3
+
++
+
+-16986
+
+12364
+
+10.8
+
+1-169954561
+
+1 169954561
+
+15490
+
+Hsd17b7
+
+-
+
+-14644
+
+19669
+
+12.2
+
+1-74571516
+
+1
+
+74571516
+
+77264
+
+Zfp142
+
+-
+
+-16512
+
+21603
+
+13.0
+
+1-36499377
+
+1
+
+36499377
+
+94218
+
+Cnnm3
+
++
+
+12490
+
+16370
+
+14.9
+
+1-89533694
+
+1
+
+89533694
+
+347722
+
+Agap1
+
++
+
+-78883 440472
+
+12.0
+
+1-172206570
+
+1 172206570
+
+18611
+
+Pea15a
+
+-
+
+-234
+
+10077
+
+10.3
+
+1-75475455
+
+1
+
+74241
+
+Chpf
+
+-
+
+-4016
+
+4903
+
+12.3
+
+75475455
+
+101
+
+edgeR User’s Guide
+
+1-51978650
+
+1
+
+51978650
+
+logCPM
+
+20849
+
+LR
+
+PValue
+
+Stat4
+
++
+
+8498 120042
+
+12.2
+
+FDR
+
+1-172206751
+
+0.2784 46.5 9.32e-12 1.33e-07
+
+1-141992739
+
+0.3304 41.9 9.59e-11 5.43e-07
+
+1-131987595
+
+1.6943 41.6 1.14e-10 5.43e-07
+
+1-169954561
+
+1.3471 40.8 1.73e-10 6.14e-07
+
+1-74571516
+
+-0.0658 40.0 2.60e-10 7.41e-07
+
+1-36499377
+
+-1.0398 39.0 4.22e-10 8.08e-07
+
+1-89533694
+
+1.3383 38.9 4.48e-10 8.08e-07
+
+1-172206570
+
+1.6996 38.7 5.05e-10 8.08e-07
+
+1-75475455
+
+0.1106 38.6 5.11e-10 8.08e-07
+
+1-51978650
+
+0.4010 38.2 6.25e-10 8.90e-07
+
+The total number of DMRs in each direction at a FDR of 5% can be examined with decide
+
+Tests.
+
+> summary(decideTests(lrt))
+-1*Group40um 1*Group60um
+Down
+
+24
+
+NotSig
+
+12473
+
+Up
+
+1738
+
+The differential methylation results can be visualized using an MD plot. The difference of
+the M-value for each CpG site is plotted against the average abundance of that CpG site.
+Significantly DMRs at a FDR of 5% are highlighted.
+> plotMD(lrt)
+
+It can be seen that most of the DMRs have higher methylation levels in 60-65µm group
+compared to the 40-45µm group. This is consistent with the findings in Gahurova et al. [13].
+
+102
+
+edgeR User’s Guide
+
+4.7.8 Summarizing counts in promoter regions
+It is usually of great biological interest to examine the methylation level within the gene
+promoter regions. For simplicity, we define the promoter of a gene as the region from 2kb
+upstream to 1kb downstream of the transcription start site of that gene. We then subset the
+CpGs to those contained in a promoter region.
+> InPromoter <- yall$genes$Distance >= -1000 & yall$genes$Distance <= 2000
+> yIP <- yall[InPromoter,,keep.lib.sizes=FALSE]
+
+We compute the total counts for each gene promoter:
+> ypr <- rowsum(yIP, yIP$genes$EntrezID, reorder=FALSE)
+> ypr$genes$EntrezID <- NULL
+
+The integer matrix ypr$counts contains the total numbers of methylated and unmethylated
+CpGs observed within the promoter of each gene.
+Filtering is performed in the same way as before. We sum up the read counts of both
+methylated and unmethylated Cs at each gene promoter within each sample.
+> Mepr <- ypr$counts[,Methylation=="Me"]
+> Unpr <- ypr$counts[,Methylation=="Un"]
+> Coveragepr <- Mepr + Unpr
+
+Since each row represents a 3,000-bps-wide promoter region that contains multiple CpG sites,
+we would expect less filtering than before.
+> HasCoveragepr <- rowSums(Coveragepr >= 8) == 6
+> HasBothpr <- rowSums(Mepr) > 0 & rowSums(Unpr) > 0
+> table(HasCoveragepr, HasBothpr)
+HasBothpr
+HasCoveragepr FALSE
+
+TRUE
+
+FALSE
+
+3053
+
+TRUE
+
+3656
+
+85 15044
+
+> ypr <- ypr[HasCoveragepr & HasBothpr,,keep.lib.sizes=FALSE]
+
+Same as before, we do not perform normalization but set the library sizes for each sample to
+be the average of the total read counts for the methylated and unmethylated libraries.
+> TotalLibSizepr <- 0.5*ypr$samples$lib.size[Methylation=="Me"] +
++
+
+0.5*ypr$samples$lib.size[Methylation=="Un"]
+> ypr$samples$lib.size <- rep(TotalLibSizepr, each=2)
+> ypr$samples
+group lib.size norm.factors
+40-45um-A-Me
+
+1
+
+8015762
+
+1
+
+40-45um-A-Un
+
+1
+
+8015762
+
+1
+
+40-45um-B-Me
+
+1 11768442
+
+1
+
+40-45um-B-Un
+
+1 11768442
+
+1
+
+50-55um-A-Me
+
+1
+
+9989109
+
+1
+
+50-55um-A-Un
+
+1
+
+9989109
+
+1
+
+50-55um-B-Me
+
+1
+
+8506420
+
+1
+
+103
+
+edgeR User’s Guide
+
+50-55um-B-Un
+
+1
+
+8506420
+
+1
+
+60-65um-A-Me
+
+1
+
+8089503
+
+1
+
+60-65um-A-Un
+
+1
+
+8089503
+
+1
+
+60-65um-B-Me
+
+1
+
+6500102
+
+1
+
+60-65um-B-Un
+
+1
+
+6500102
+
+1
+
+4.7.9 Differential methylation in gene promoters
+We estimate the NB dispersions using the estimateDisp function. For the same reason, we
+do not consider a mean-dependent dispersion trend as we normally would for RNA-seq data.
+> ypr <- estimateDisp(ypr, design, trend="none")
+> ypr$common.dispersion
+[1] 0.243
+> ypr$prior.df
+[1] 10.4
+
+We fit NB GLMs for all the gene promoters using glmFit.
+> fitpr <- glmFit(ypr, design)
+
+Then we can proceed to testing for differential methylation in gene promoter regions between
+different populations. Suppose the comparison of interest is the same as before. The same
+contrast can be used for the testing.
+> lrtpr <- glmLRT(fitpr, contrast=contr)
+
+The top set of most differentially methylated gene promoters can be viewed with topTags:
+> topTags(lrtpr, n=20)
+Coefficient:
+
+-1*Group40um 1*Group60um
+
+Chr
+78102
+
+Symbol Strand logFC logCPM
+
+15 8430426J06Rik
+
+-
+
+7.80
+
+LR
+
+PValue
+
+FDR
+
+5.53 84.5 3.77e-20 5.67e-16
+
+210274
+
+7
+
+Shank2
+
++
+
+7.32
+
+6.56 79.6 4.50e-19 3.39e-15
+
+100038353
+
+18
+
+Gm10532
+
++
+
+7.76
+
+4.79 75.0 4.74e-18 2.38e-14
+
+102465670
+
+11
+
+Mir7115
+
++
+
+8.23
+
+4.50 72.3 1.85e-17 6.94e-14
+
+15552
+
+4
+
+Htr1d
+
++
+
+7.02
+
+6.96 68.8 1.11e-16 2.92e-13
+
+246257
+
+11
+
+Ovca2
+
+-
+
+7.62
+
+6.60 68.7 1.17e-16 2.92e-13
+
+30841
+
+5
+
+Kdm2b
+
+-
+
+6.64
+
+7.64 67.8 1.85e-16 3.98e-13
+
+226527
+
+1
+
+Cryzl2
+
++
+
+8.97
+
+4.54 66.6 3.32e-16 6.24e-13
+
+114483644
+
+17
+
+Mir3083b
+
++
+
+8.80
+
+5.81 66.3 3.93e-16 6.57e-13
+
+20410
+
+14
+
+Sorbs3
+
+-
+
+6.43
+
+6.92 64.0 1.22e-15 1.83e-12
+
+104184
+
+11
+
+Blmh
+
++
+
+7.53
+
+5.87 62.0 3.42e-15 4.63e-12
+
+102466776
+
+17
+
+Mir6966
+
++
+
+7.41
+
+4.43 61.7 3.91e-15 4.63e-12
+
+102466209
+
+14
+
+Mir6947
+
++
+
+6.92
+
+5.13 61.7 4.00e-15 4.63e-12
+
+72446
+
+2
+
+Prr5l
+
+-
+
+7.39
+
+6.54 61.4 4.71e-15 5.06e-12
+
+217198
+
+11
+
+Plekhh3
+
+-
+
+7.03
+
+6.76 59.7 1.09e-14 1.09e-11
+
+18611
+
+1
+
+Pea15a
+
+-
+
+7.18
+
+5.79 58.8 1.71e-14 1.61e-11
+
+237336
+
+10
+
+Tbpl1
+
+-
+
+7.09
+
+7.69 58.6 1.95e-14 1.72e-11
+
+104
+
+edgeR User’s Guide
+
+75480
+
+2 1700003F12Rik
+
++
+
+9.15
+
+4.39 58.3 2.21e-14 1.82e-11
+
+19894
+
+5
+
+Rph3a
+
+-
+
+6.60
+
+6.14 58.3 2.30e-14 1.82e-11
+
+212307
+
+18
+
+Mapre2
+
++
+
+6.36
+
+6.96 58.1 2.45e-14 1.85e-11
+
+The total number of DM gene promoters identified at an FDR of 5% can be shown with
+decideTests.
+> summary(decideTests(lrtpr))
+-1*Group40um 1*Group60um
+Down
+NotSig
+
+15
+14332
+
+Up
+
+697
+
+The differential methylation results can be visualized with an MD plot.
+> plotMD(lrtpr)
+
+4.7.10 Setup
+This analysis was conducted on:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+_
+_
+[3] LC MONETARY=English Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+
+105
+
+edgeR User’s Guide
+
+attached base packages:
+[1] stats
+
+graphics
+
+grDevices utils
+
+other attached packages:
+[1] edgeR_3.39.6
+limma_3.53.6
+
+knitr_1.40
+
+methods
+
+base
+
+BiocStyle_2.25.0
+
+loaded via a namespace (and not attached):
+[1] KEGGREST_1.37.3
+locfit_1.5-9.6
+
+tidyselect_1.1.2
+
+[4] xfun_0.32
+[7] vctrs_0.4.1
+
+purrr_0.3.4
+htmltools_0.5.3
+
+lattice_0.20-45
+stats4_4.2.1
+
+[10] yaml_2.3.5
+[13] rlang_1.0.5
+
+utf8_1.2.2
+pillar_1.8.1
+
+blob_1.2.3
+glue_1.6.2
+
+[16] DBI_1.1.3
+
+BiocGenerics_0.43.2
+
+bit64_4.0.5
+
+[19] GenomeInfoDbData_1.2.8 lifecycle_1.0.1
+[22] stringr_1.4.1
+Biostrings_2.65.3
+
+zlibbioc_1.43.0
+evaluate_0.16
+
+[25] memoise_2.0.1
+[28] IRanges_2.31.2
+
+tzdb_0.3.0
+
+[31] parallel_4.2.1
+[34] highr_0.9
+[37] BiocManager_1.30.18
+[40] XVector_0.37.1
+[43] png_0.1-7
+[46] stringi_1.7.8
+
+Biobase_2.57.1
+fastmap_1.1.0
+fansi_1.0.3
+Rcpp_1.0.9
+cachem_1.0.6
+
+GenomeInfoDb_1.33.7
+AnnotationDbi_1.59.1
+readr_2.1.2
+S4Vectors_0.35.3
+
+vroom_1.5.7
+hms_1.1.2
+
+bit_4.0.4
+digest_0.6.29
+
+grid_4.2.1
+
+bitops_1.0-7
+magrittr_2.0.3
+
+[49] cli_3.3.0
+[52] RCurl_1.98-1.8
+
+tools_4.2.1
+tibble_3.1.8
+
+[55] crayon_1.5.1
+
+pkgconfig_2.0.3
+rmarkdown_2.17
+
+[58] org.Mm.eg.db_3.15.0
+[61] R6_2.5.1
+
+4.8
+
+datasets
+
+RSQLite_2.2.16
+ellipsis_0.3.2
+httr_1.4.4
+
+compiler_4.2.1
+
+Time course RNA-seq experiments of Drosophila
+melanogaster
+
+4.8.1 Introduction
+The data for this case study was generated by Graveley et al. [14] and was previously analyzed
+by Law et al. [18] using polynomial regression. Here we reanalyze the data using smoothing
+splines to illustrate a general approach that can be taken to time-course data with many time
+points. The approach taken here does not require biological replicates at each time point
+— we can instead estimate the magnitude of biological variation from the smoothness or
+otherwise of the time-course expression trend for each gene.
+Graveley et al. conducted RNA-seq to examine the dynamics of gene expression throughout
+developmental stages of the common fruit fly (Drosophila melanogaster ). 30 whole-animal
+samples representing 27 distinct stages of development were used for sequencing. These
+included 12 embryonic samples collected at 2-hour intervals from 0–2 hours to 22–24 hours
+and also six larval, six pupal and three sexed adult stages at 1, 5 and 30 days after eclosion.
+Each biological sample was sequenced several times and we view these as technical replicates.
+Here we analyze only the data from the 12 embryonic stages.
+
+106
+
+edgeR User’s Guide
+
+RNA-seq read counts for this data are available from the ReCount [11] at . http://bowtie-bio.
+sourceforge.net. The table of read counts can be read into R directly from the ReCount
+website by
+> CountFile <- paste("http://bowtie-bio.sourceforge.net/recount",
++
+
+"countTables",
+"modencodefly_count_table.txt", sep="/")
+
++
+
+> Counts <- read.delim(CountFile, row.names=1)
+
+The sample information can be read by
+> SampleFile <- paste("http://bowtie-bio.sourceforge.net/recount",
++
+
+"phenotypeTables",
+"modencodefly_phenodata.txt", sep="/")
+
++
+
+> Samples <- read.delim(SampleFile, row.names=1, sep=" ", stringsAsFactors=FALSE)
+
+The data has 127 columns of counts but only 30 biologically independent samples:
+> dim(Counts)
+[1] 14869
+
+147
+
+We therefore sum the technical replicates to get total genewise read counts for each biological
+sample:
+> PooledCounts <- sumTechReps(Counts, ID=Samples$stage)
+> dim(PooledCounts)
+[1] 14869
+
+30
+
+> colnames(PooledCounts)
+[1] "Embryos0002"
+
+"Embryos0204"
+
+"Embryos0406"
+
+[4] "Embryos0608"
+
+"Embryos0810"
+
+"Embryos1012"
+
+[7] "Embryos1214"
+
+"Embryos1416"
+
+"Embryos1618"
+
+[10] "Embryos1820"
+
+"Embryos2022"
+
+"Embryos2224"
+
+[13] "L1Larvae"
+
+"L2Larvae"
+
+"L3Larvae12hrpostmolt"
+
+[16] "L3LarvaePS12"
+
+"L3LarvaePS36"
+
+"L3LarvaePS79"
+
+[19] "WPP12hr"
+
+"WPP24hr"
+
+"adultfemale1d"
+
+[22] "adultfemale30d"
+
+"adultfemale5d"
+
+"adultmale1d"
+
+[25] "adultmale30d"
+
+"adultmale5d"
+
+"pupaeWPP2d"
+
+[28] "pupaeWPP3d"
+
+"pupaeWPP4d"
+
+"whiteprepupae"
+
+4.8.2 DEGList object
+The embryonic stages correspond to the first 12 columns of data. We create a DGEList object
+from these columns by:
+> Hours <- seq(from=2, to=24, by=2)
+> Time <- paste0(Hours,"hrs")
+> y <- DGEList(counts=PooledCounts[,1:12], group=Time)
+
+107
+
+edgeR User’s Guide
+
+4.8.3 Gene annotation
+We use the D. melanogaster organism package org.Dm.eg.db to map the flybase gene IDs to
+gene symbols. Some flybase IDs map to multiple genes. To handle this possibility, we use
+the multiVals argument of mapIds to keep the multiple symbols separated by semicolons:
+> library(org.Dm.eg.db)
+> multiVals <- function(x) paste(x,collapse=";")
+> Symbol <- mapIds(org.Dm.eg.db, keys=rownames(y), keytype="FLYBASE",
++
+
+column="SYMBOL", multiVals=multiVals)
+
+> y$genes <- data.frame(Symbol=Symbol, stringsAsFactors=FALSE)
+> head(y$genes)
+Symbol
+FBgn0000003 7SLRNA:CR32864
+FBgn0000008
+
+a
+
+FBgn0000014
+
+abd-A
+
+FBgn0000015
+
+Abd-B
+
+FBgn0000017
+
+Abl
+
+FBgn0000018
+
+abo
+
+We will remove flybase IDs that cannot be mapped to gene symbols:
+> HasSymbol <- y$genes$Symbol != "NA"
+> y <- y[HasSymbol, , keep.lib.sizes=FALSE]
+
+4.8.4 Filtering and normalization
+We filter out lowly expressed genes.
+> keep <- filterByExpr(y)
+> table(keep)
+keep
+FALSE
+
+TRUE
+
+2597 10995
+> y <- y[keep, , keep.lib.sizes=FALSE]
+
+TMM normalization is performed to estimate effective library sizes:
+> y <- calcNormFactors(y)
+> y$samples
+group lib.size norm.factors
+Embryos0002
+
+2hrs 48357074
+
+0.929
+
+Embryos0204
+
+4hrs 38900872
+
+0.900
+
+Embryos0406
+
+6hrs 90036132
+
+0.942
+
+Embryos0608
+
+8hrs 55658696
+
+1.018
+
+Embryos0810 10hrs 52648211
+
+1.114
+
+Embryos1012 12hrs 67741086
+
+1.121
+
+Embryos1214 14hrs 83432728
+
+1.172
+
+Embryos1416 16hrs 66802084
+
+0.984
+
+Embryos1618 18hrs 61428450
+
+0.968
+
+108
+
+edgeR User’s Guide
+
+Embryos1820 20hrs 62140522
+
+0.922
+
+Embryos2022 22hrs 34005429
+
+0.972
+
+Embryos2224 24hrs 68427067
+
+0.998
+
+4.8.5 Data exploration
+The data can be explored by generating multi-dimensional scaling (MDS) plots. This visualizes the differences between the expression profiles of different samples in two dimensions.
+The 12 successive embryonic developmental stages are labelled according to number of hours
+since fertilization. The MDS plot shows a smooth trend of transition in gene expression
+during embryonic development from the start up to 22 hours:
+> plotMDS(y, labels=Hours)
+
+2
+
+4
+24
+22
+
+1
+
+6
+
+0
+
+20
+
+−1
+
+8
+10
+
+18
+
+−2
+
+Leading logFC dim 2 (19%)
+
+3
+
+2
+
+−3
+
+12
+
+16
+
+14
+−4
+
+−2
+
+0
+
+2
+
+4
+
+Leading logFC dim 1 (60%)
+
+4.8.6 The design matrix
+The aim of a time course experiment is to examine the relationship between gene abundances
+and time points. Assuming gene expression changes smoothly over time, we can use a
+polynomial or a cubic spline curve with a certain number of degrees of freedom to model
+gene expression along time.
+To use a polynomial with, say 3 degrees of freedom, a design matrix could be constructed as
+follows.
+> X <- poly(Hours, degree=3)
+> design <- model.matrix(~ X)
+> design
+(Intercept)
+
+X1
+
+X2
+
+X3
+
+1
+
+1 -0.4599
+
+0.50183 -0.4599
+
+2
+
+1 -0.3763
+
+0.22810
+
+0.0418
+
+3
+
+1 -0.2927
+
+0.00912
+
+0.2927
+
+109
+
+edgeR User’s Guide
+
+4
+
+1 -0.2091 -0.15511
+
+0.3484
+
+5
+
+1 -0.1254 -0.26460
+
+0.2648
+
+6
+
+1 -0.0418 -0.31935
+
+0.0976
+
+7
+
+1
+
+0.0418 -0.31935 -0.0976
+
+8
+
+1
+
+0.1254 -0.26460 -0.2648
+
+9
+
+1
+
+0.2091 -0.15511 -0.3484
+
+10
+
+1
+
+0.2927
+
+0.00912 -0.2927
+
+11
+
+1
+
+0.3763
+
+0.22810 -0.0418
+
+12
+
+1
+
+0.4599
+
+0.50183
+
+0.4599
+
+attr(,"assign")
+[1] 0 1 1 1
+
+Then the coefficients X1, X2 and X3 represent the linear, quadratic and cubic time effect,
+respectively. Hypotheses can be tested for each one of the coefficients.
+To use a cubic regression spline curve with, say 3 degrees of freedom, a design matrix can
+be constructed as follows.
+> library(splines)
+> X <- ns(Hours, df=3)
+> design <- model.matrix(~ X)
+> design
+(Intercept)
+
+X2
+
+X3
+
+0.0000 0.000
+
+X1
+
+0.000
+
+1
+
+1
+
+2
+
+1 -0.0643 0.203 -0.135
+
+3
+
+1 -0.0995 0.380 -0.253
+
+4
+
+1 -0.0764 0.503 -0.335
+
+5
+
+1
+
+0.0334 0.547 -0.365
+
+6
+
+1
+
+0.2199 0.512 -0.333
+
+7
+
+1
+
+0.4134 0.435 -0.247
+
+8
+
+1
+
+0.5391 0.359 -0.114
+
+9
+
+1
+
+0.5281 0.323
+
+0.058
+
+10
+
+1
+
+0.3806 0.332
+
+0.260
+
+11
+
+1
+
+0.1417 0.373
+
+0.482
+
+12
+
+1 -0.1429 0.429
+
+0.714
+
+attr(,"assign")
+[1] 0 1 1 1
+
+Here the three coefficients do not have any particular meaning. Hypothesis testing would only
+make sense if the three coefficients are assessed together. The advantage of using a cubic
+spline curve is that it provides more stable fit at the end points compared to a polynomial.
+The spline curve with 3 degrees of freedonm has 2 knots where cubic polynomials are splined
+together. In general, choosing a number of degrees of freedom to be in range of 3-5 is
+reasonable. Setting the degrees of freedom equal to 1 would be equivalent to simple linear
+regression, i.e., a straight line trend.
+
+110
+
+edgeR User’s Guide
+
+4.8.7 Estimating the dispersion
+The NB dispersion is estimated using the estimateDisp function. This returns the DGEList
+object with additional entries for the estimated NB dispersion for each gene. These estimates
+can be visualized with plotBCV, which shows the root-estimate, i.e., the biological coefficient
+of variation for each gene.
+> y <- estimateDisp(y, design)
+> sqrt(y$common.dispersion)
+[1] 0.446
+> plotBCV(y)
+
+For the QL dispersions, estimation can be performed using the glmQLFit function. This returns
+a DGEGLM object containing the estimated values of the GLM coefficients for each gene, as well
+as the fitted mean-QL dispersion trend, the squeezed QL estimates and the prior degrees of
+freedom (df). These can be visualized with the plotQLDisp function.
+> fit <- glmQLFit(y, design, robust=TRUE)
+> plotQLDisp(fit)
+
+111
+
+edgeR User’s Guide
+
+4.8.8 Time course trend analysis
+In a time course experiment, we are looking for genes that change expression level over time.
+Here, the design matrix uses 3 natural spline basis vectors to model smooth changes over
+time, without assuming any particular pattern to the trend. We test for a trend by conducting
+F-tests on 3 df for each gene:
+> fit <- glmQLFTest(fit, coef=2:4)
+
+The topTags function lists the top set of genes with most significant time effects.
+> tab <- as.data.frame(topTags(fit, n=30))
+> tab
+Symbol logFC.X1 logFC.X2 logFC.X3 logCPM
+
+F
+
+PValue
+
+FDR
+
+FBgn0023179
+
+amon
+
+9.08
+
+8.70
+
+9.81
+
+5.00 490 1.96e-12 9.16e-09
+
+FBgn0030747
+
+CG4301
+
+8.93
+
+10.55
+
+8.54
+
+6.05 474 2.37e-12 9.16e-09
+
+FBgn0004169
+
+up
+
+9.85
+
+8.81
+
+8.76
+
+10.53 470 2.50e-12 9.16e-09
+
+FBgn0002773
+
+Mlc2
+
+9.62
+
+9.05
+
+8.56
+
+11.32 420 4.97e-12 9.95e-09
+
+FBgn0027556
+
+CG4928
+
+7.92
+
+9.77
+
+10.92
+
+7.41 415 5.12e-12 9.95e-09
+
+FBgn0001114
+
+Glt
+
+9.33
+
+8.17
+
+8.25
+
+9.47 410 5.43e-12 9.95e-09
+
+FBgn0035293
+
+CG5687
+
+8.23
+
+8.85
+
+10.45
+
+4.99 391 7.15e-12 1.12e-08
+
+FBgn0033958
+
+jef
+
+9.67
+
+7.78
+
+9.47
+
+5.69 369 9.97e-12 1.37e-08
+
+FBgn0004516
+
+Gad1
+
+8.46
+
+8.73
+
+9.72
+
+6.19 355 1.24e-11 1.51e-08
+
+FBgn0037870
+
+CG18577
+
+13.08
+
+1.67
+
+18.19
+
+1.87 347 1.42e-11 1.56e-08
+
+FBgn0033250
+
+CG14762
+
+8.89
+
+9.77
+
+8.92
+
+5.68 335 1.72e-11 1.68e-08
+
+FBgn0038420
+
+CG10311
+
+8.11
+
+7.47
+
+9.56
+
+5.82 331 1.84e-11 1.68e-08
+
+FBgn0031866
+
+Nlg2
+
+8.15
+
+5.97
+
+7.53
+
+5.12 324 2.08e-11 1.73e-08
+
+FBgn0039536
+
+unc80
+
+9.78
+
+8.67
+
+8.93
+
+6.11 317 2.35e-11 1.73e-08
+
+FBgn0004242
+
+Syt1
+
+9.00
+
+9.56
+
+8.40
+
+5.77 317 2.36e-11 1.73e-08
+
+FBgn0002772
+
+Mlc1
+
+9.67
+
+8.90
+
+8.94
+
+9.37 299 3.48e-11 2.32e-08
+
+FBgn0010482 l(2)01289
+
+9.23
+
+9.40
+
+10.29
+
+5.30 294 3.65e-11 2.32e-08
+
+FBgn0031930
+
+7.54
+
+8.00
+
+12.47
+
+3.30 292 3.80e-11 2.32e-08
+
+CG7025
+
+112
+
+edgeR User’s Guide
+
+FBgn0000024
+
+Ace
+
+8.64
+
+12.46
+
+7.91
+
+FBgn0025837
+
+CG17636
+
+6.84
+
+9.79
+
+9.48
+
+5.01 280 4.83e-11 2.79e-08
+3.82 271 5.80e-11 2.83e-08
+
+FBgn0004117
+
+Tm2
+
+9.58
+
+8.79
+
+8.80
+
+10.01 273 5.99e-11 2.83e-08
+
+FBgn0029814
+
+CG15765
+
+8.75
+
+10.08
+
+8.35
+
+4.37 269 6.00e-11 2.83e-08
+
+FBgn0085427
+
+CG34398
+
+7.68
+
+10.44
+
+5.65
+
+6.06 268 6.12e-11 2.83e-08
+
+FBgn0031908
+
+CG5177
+
+9.67
+
+8.37
+
+7.94
+
+8.29 268 6.30e-11 2.83e-08
+
+FBgn0259896
+
+NimC1
+
+9.69
+
+12.30
+
+9.96
+
+3.88 266 6.44e-11 2.83e-08
+
+FBgn0004575
+
+Syn
+
+8.50
+
+9.24
+
+8.05
+
+6.19 263 6.87e-11 2.90e-08
+
+FBgn0035041
+
+CG13594
+
+9.26
+
+7.59
+
+9.17
+
+3.87 258 7.62e-11 3.02e-08
+
+FBgn0031012
+
+CG8051
+
+6.14
+
+9.91
+
+8.42
+
+5.26 257 7.70e-11 3.02e-08
+
+FBgn0085414
+
+dpr12
+
+8.67
+
+12.12
+
+8.39
+
+4.46 252 8.72e-11 3.21e-08
+
+FBgn0052311
+
+zormin
+
+9.17
+
+10.21
+
+7.28
+
+8.18 252 8.88e-11 3.21e-08
+
+The total number of genes with significant (5% FDR) changes at different time points can
+be examined with decideTests.
+> summary(decideTests(fit))
+X3-X2-X1
+NotSig
+
+1850
+
+Sig
+
+9145
+
+Note that all three spline coefficients should be tested together in this way. It is not meaningful
+to replace the F-tests with t-tests for the individual coefficients, and similarly thelogFC columns
+of the top table do not have any interpretable meaning. The trends should instead be
+interpreted by way of trend plots, as we show now.
+Finally, we visualize the fitted spline curves for the top four genes. We start by computing
+the observed and fitted log-CPM values for each gene:
+> logCPM.obs <- cpm(y, log=TRUE, prior.count=fit$prior.count)
+> logCPM.fit <- cpm(fit, log=TRUE)
+
+We then loop through the first four genes in the topTags table, plotting the observed and
+fitted values for each gene:
+> par(mfrow=c(2,2))
+> for(i in 1:4) {
++
+
+FlybaseID <- row.names(tab)[i]
+
++
+
+Symbol <- tab$Symbol[i]
+
++
+
+logCPM.obs.i <- logCPM.obs[FlybaseID,]
+
++
+
+logCPM.fit.i <- logCPM.fit[FlybaseID,]
+
++
+
+plot(Hours, logCPM.obs.i, ylab="log-CPM", main=Symbol, pch=16)
+
++
+
+lines(Hours, logCPM.fit.i, col="red", lwd=2)
+
++ }
+
+113
+
+edgeR User’s Guide
+
+CG4301
+
+2
+
+log−CPM
+
+2
+
+−2
+
+−2
+
+0
+
+0
+
+log−CPM
+
+4
+
+4
+
+6
+
+6
+
+amon
+
+10
+
+15
+
+20
+
+5
+
+10
+
+Hours
+
+Hours
+
+up
+
+Mlc2
+
+15
+
+20
+
+15
+
+20
+
+8
+
+log−CPM
+
+8
+
+4
+
+4
+
+6
+
+6
+
+log−CPM
+
+10
+
+10
+
+12
+
+12
+
+5
+
+5
+
+10
+
+15
+
+20
+
+Hours
+
+5
+
+10
+Hours
+
+> par(mfrow=c(1,1))
+
+In each plot, the red curve shows the fitted log2-CPM for that genes while the black dots
+show the observed log-CPM values. All four of the genes show increased expression during
+embryo development, with an up trend especially during the period from 6hrs to 20hrs.
+
+4.8.9 Setup
+This analysis was conducted using the following software setup:
+> sessionInfo()
+R version 4.2.1 (2022-06-23 ucrt)
+Platform: x86_64-w64-mingw32/x64 (64-bit)
+Running under: Windows 10 x64 (build 19044)
+
+114
+
+edgeR User’s Guide
+
+Matrix products: default
+locale:
+[1] LC_COLLATE=English_Australia.utf8
+
+LC_CTYPE=English_Australia.utf8
+_
+_
+[3] LC MONETARY=English Australia.utf8 LC_NUMERIC=C
+[5] LC_TIME=English_Australia.utf8
+attached base packages:
+[1] splines
+
+stats4
+
+[8] methods
+
+base
+
+stats
+
+other attached packages:
+[1] org.Dm.eg.db_3.16.0
+[4] S4Vectors_0.35.3
+[7] edgeR_3.39.6
+[10] BiocStyle_2.25.0
+
+graphics
+
+grDevices utils
+
+datasets
+
+AnnotationDbi_1.59.1 IRanges_2.31.2
+Biobase_2.57.1
+BiocGenerics_0.43.2
+limma_3.53.6
+
+knitr_1.40
+
+loaded via a namespace (and not attached):
+[1] Rcpp_1.0.9
+XVector_0.37.1
+[4] compiler_4.2.1
+
+BiocManager_1.30.18
+
+GenomeInfoDb_1.33.7
+highr_0.9
+
+[7] zlibbioc_1.43.0
+[10] statmod_1.4.37
+
+bitops_1.0-7
+digest_0.6.29
+
+tools_4.2.1
+bit_4.0.4
+
+[13] evaluate_0.16
+[16] lattice_0.20-45
+
+RSQLite_2.2.16
+pkgconfig_2.0.3
+
+memoise_2.0.1
+png_0.1-7
+
+[19] rlang_1.0.5
+[22] yaml_2.3.5
+
+cli_3.3.0
+xfun_0.32
+
+DBI_1.1.3
+fastmap_1.1.0
+
+[25] GenomeInfoDbData_1.2.8 stringr_1.4.1
+[28] Biostrings_2.65.3
+vctrs_0.4.1
+
+httr_1.4.4
+locfit_1.5-9.6
+
+[31] bit64_4.0.5
+[34] rmarkdown_2.17
+
+grid_4.2.1
+blob_1.2.3
+
+R6_2.5.1
+
+[37] htmltools_0.5.3
+
+KEGGREST_1.37.3
+
+magrittr_2.0.3
+stringi_1.7.8
+
+[40] RCurl_1.98-1.8
+
+cachem_1.0.6
+
+crayon_1.5.1
+
+115
+
+Bibliography
+1. Benjamini, Y. and Hochberg, Y. (1995). Controlling the false discovery rate: a
+practical and powerful approach to multiple testing. Journal of the Royal Statistical
+Society Series B 57, 289–300.
+2. Brooks, A.N., Yang, L., Duff, M.O., Hansen, K.D., Park, J.W., Dudoit, S., Brenner,
+S.E., and Graveley, B.R. (2011). Conservation of an RNA regulatory map between
+Drosophila and mammals. Genome Res 21, 193–202.
+3. Chen, Y., Lun, A.T.L., and Smyth, G.K. (2014). Differential expression analysis of
+complex RNA-seq experiments using edgeR. In S. Datta and D.S. Nettleton, editors,
+Statistical Analysis of Next Generation Sequence Data, pages 51–74. Springer, New
+York.
+4. Chen, Y., Pal, B., Visvader, J.E., and Smyth, G.K. (2017). Differential methylation
+analysis of reduced representation bisulfite sequencing experiments using edgeR.
+F1000Research 6, 2055.
+5. Cox, D.R. and Reid, N. (1987). Parameter orthogonality and approximate conditional
+inference. Journal of the Royal Statistical Society, Series B 49, 1–39.
+6. Cumbie, J.S., Kimbrel, J.A., Di, Y., Schafer, D.W., Wilhelm, L.J., Fox, S.E., Sullivan,
+C.M., Curzon, A.D., Carrington, J.C., Mockler, T.C., and Chang, J.H. (2011).
+Gene-counter: A computational pipeline for the analysis of RNA-Seq data for gene
+expression differences. PLoS ONE 6, e25279.
+7. Dai, Z., Sheridan, J.M., Gearing, L.J., Moore, D.L., Su, S., Wormald, S., Wilcox, S.,
+O’Connor, L., Dickins, R.A., Blewitt, M.E., and Ritchie, M.E. (2014). edgeR: a versatile
+tool for the analysis of shRNA-seq and CRISPR-Cas9 genetic screens. F1000Res 3, 95.
+8. Du, P., Zhang, X., Huang, C.C., Jafari, N., Kibbe, W.A., Hou, L., and Lin, S.M.
+(2010). Comparison of Beta-value and M-value methods for quantifying methylation
+levels by microarray analysis. BMC Bioinformatics 11, 587.
+9. Dunn, P.K. and Smyth, G.K. (2018). Generalized Linear Models With Examples in R.
+Springer-Verlag, New York.
+10. Feng, H., Conneely, K.N., and Wu, H. (2014). A Bayesian hierarchical model to detect
+differentially methylated loci from single nucleotide resolution sequencing data. Nucleic
+Acids Research 42, e69–e69.
+11. Frazee, A.C., Langmead, B., and Leek, J.T. (2011). ReCount: a multi-experiment
+resource of analysis-ready RNA-seq gene count datasets. BMC Bioinformatics 12, 449.
+
+116
+
+edgeR User’s Guide
+
+12. Fu, N.Y., Rios, A., Pal, B., Soetanto, R., Lun, A.T.L., Liu, K., Beck, T., Best, S.,
+Vaillant, F., Bouillet, P., Strasser, A., Preiss, T., Smyth, G.K., Lindeman, G., , and
+Visvader, J. (2015). EGF-mediated induction of Mcl-1 at the switch to lactation is
+essential for alveolar cell survival. Nature Cell Biology 17, 365–375.
+13. Gahurova, L., Tomizawa, S.i., Smallwood, S.A., Stewart-Morgan, K.R., Saadeh, H.,
+Kim, J., Andrews, S.R., Chen, T., and Kelsey, G. (2017). Transcription and chromatin
+determinants of de novo DNA methylation timing in oocytes. Epigenetics & chromatin
+10, 25.
+14. Graveley, B.R., Brooks, N., Carlson, J.W., Duff, M.O., Landolin, J.M., Yang, L.,
+Artieri, G., van Baren, M.J., Boley, N., Booth, B.W., Brown, J.B., Cherbas, L., Davis,
+C.A., Dobin, A., Li, R., Lin, W., Malone, J.H., Mattiuzzo, N.R., Miller, D., Sturgill, D.,
+Tuch, B.B., Zaleski, C., Zhang, D., Blanchette, M., and Dudoit, S. (2011). The
+developmental transcriptome of drosophila melanogaster. Nature 471, 473–479.
+15. Hansen, K.D., Irizarry, R.A., and Zhijin, W. (2012). Removing technical variability in
+RNA-seq data using conditional quantile normalization. Biostatistics 13, 204–216.
+16. International HapMap Consortium, T. (2005). A haplotype map of the human genome.
+Nature 437, 1299–1320.
+17. Krueger, F. and Andrews, S.R. (2011). Bismark: a flexible aligner and methylation
+caller for Bisulfite-Seq applications. bioinformatics 27, 1571–1572.
+18. Law, C.W., Chen, Y., Shi, W., and Smyth, G.K. (2014). Voom: precision weights
+unlock linear model analysis tools for RNA-seq read counts. Genome Biology 15, R29.
+19. Liao, Y., Smyth, G.K., and Shi, W. (2013). The Subread aligner: fast, accurate and
+scalable read mapping by seed-and-vote. Nucleic Acids Research 41, e108.
+20. Liao, Y., Smyth, G.K., and Shi, W. (2014). featureCounts: an efficient general-purpose
+read summarization program. Bioinformatics 30, 923–930.
+21. Liao, Y., Smyth, G.K., and Shi, W. (2019). The R package Rsubread is easier, faster,
+cheaper and better for alignment and quantification of RNA sequencing reads. Nucleic
+Acids Research 47, e47.
+22. Lun, A.T.L., Chen, Y., and Smyth, G.K. (2016). It’s DE-licious: a recipe for differential
+expression analyses of RNA-seq experiments using quasi-likelihood methods in edgeR.
+Methods in Molecular Biology 1418, 391–416.
+23. Lund, S., Nettleton, D., McCarthy, D., and Smyth, G. (2012). Detecting differential
+expression in RNA-sequence data using quasi-likelihood with shrunken dispersion
+estimates. Statistical Applications in Genetics and Molecular Biology 11, Article
+Number 8.
+24. Marioni, J.C., Mason, C.E., Mane, S.M., Stephens, M., and Gilad, Y. (2008). RNA-seq:
+An assessment of technical reproducibility and comparison with gene expression arrays.
+Genome Res 18, 1509–1517.
+25. McCarthy, D.J., Chen, Y., and Smyth, G.K. (2012). Differential expression analysis of
+multifactor RNA-Seq experiments with respect to biological variation. Nucleic Acids
+Research 40, 4288–4297.
+26. McCarthy, D.J. and Smyth, G.K. (2009). Testing significance relative to a fold-change
+threshold is a TREAT. Bioinformatics 25, 765–771.
+
+117
+
+edgeR User’s Guide
+
+27. Meissner, A., Gnirke, A., Bell, G.W., Ramsahoye, B., Lander, E.S., and Jaenisch, R.
+(2005). Reduced representation bisulfite sequencing for comparative high-resolution
+DNA methylation analysis. Nucleic acids research 33, 5868–5877.
+28. Phipson, B., Lee, S., Majewski, I.J., Alexander, W.S., and Smyth, G.K. (2016). Robust
+hyperparameter estimation protects against hypervariable genes and improves power to
+detect differential expression. Annals of Applied Statistics 10, 946–963.
+29. Pickrell, J.K., Marioni, J.C., Pai, A.A., Degner, J.F., Engelhardt, B.E., Nkadori, E.,
+Veyrieras, J.B., Stephens, M., Gilad, Y., and Pritchard, J.K. (2010). Understanding
+mechanisms underlying human gene expression variation with RNA sequencing. Nature
+464, 768–772.
+30. Pickrell, J.K., Pai, A.A., Gilad, Y., and Pritchard, J.K. (2010). Noisy splicing drives
+mRNA isoform diversity in human cells. PLoS Genetics 6, e1001236.
+31. Risso, D., Schwartz, K., Sherlock, G., and Dudoit, S. (2011). GC-content normalization
+for RNA-Seq data. BMC Bioinformatics 12, 480.
+32. Robinson, M., McCarthy, D., and Smyth, G. (2010). edgeR: a Bioconductor package
+for differential expression analysis of digital gene expression data. Bioinformatics 26,
+139–140.
+33. Robinson, M.D. and Oshlack, A. (2010). A scaling normalization method for
+differential expression analysis of RNA-seq data. Genome Biology 11, R25.
+34. Robinson, M.D. and Smyth, G.K. (2007). Moderated statistical tests for assessing
+differences in tag abundance. Bioinformatics 23, 2881–2887.
+35. Robinson, M.D. and Smyth, G.K. (2008). Small-sample estimation of negative binomial
+dispersion, with applications to SAGE data. Biostatistics 9, 321–332.
+36. Schübeler, D. (2015). Function and information content of DNA methylation. Nature
+517, 321–326.
+37. Shalem, O., Sanjana, N.E., Hartenian, E., Shi, X., Scott, D.A., Mikkelsen, T.S., Heckl,
+D., Ebert, B.L., Root, D.E., Doench, J.G., and Zhang, F. (2014). Genome-scale
+CRISPR-Cas9 knockout screening in human cells. Science 343, 84–7.
+38. Smyth, G.K. (2004). Linear models and empirical Bayes methods for assessing
+differential expression in microarray experiments. Statistical Applications in Genetics
+and Molecular Biology 3, Article 3.
+39. Subramanian, A., Tamayo, P., Mootha, V.K., Mukherjee, S., Ebert, B.L., Gillette,
+M.A., Paulovich, A., Pomeroy, S.L., Golub, T.R., Lander, E.S., and Mesirov, J.P.
+(2005). Gene set enrichment analysis: a knowledge-based approach for interpreting
+genome-wide expression profiles. Proc Natl Acad Sci USA 102, 15545–50.
+40. Tuch, B.B., Laborde, R.R., Xu, X., Gu, J., Chung, C.B., Monighetti, C.K., Stanley, S.J.,
+Olsen, K.D., Kasperbauer, J.L., Moore, E.J., Broomer, A.J., Tan, R., Brzoska, P.M.,
+Muller, M.W., Siddiqui, A.S., Asmann, Y.W., Sun, Y., Kuersten, S., Barker, M.A.,
+Vega, F.M.D.L., and Smith, D.I. (2010). Tumor transcriptome sequencing reveals allelic
+expression imbalances associated with copy number alterations. PLoS ONE 5, e9317.
+41. Wu, D., Lim, E., Vaillant, F., Asselin-Labat, M., Visvader, J., and Smyth, G. (2010).
+ROAST: rotation gene set tests for complex microarray experiments. Bioinformatics 26,
+2176–2182.
+
+118
+
+edgeR User’s Guide
+
+42. Wu, D. and Smyth, G. (2012). Camera: a competitive gene set test accounting for
+inter-gene correlation. Nucleic Acids Research 40, e133.
+
+119
+
+

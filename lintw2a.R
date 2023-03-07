@@ -25,9 +25,9 @@ c2sd <- 1 # group 1 sd
 #                 Condition=rep(paste0("C",1:2), each=hns),
 #                 Pair=rep(paste0("P",1:hns), 2),
 #                 Legend=rep("Samples",ns))
-d <- matrix(c(rnorm(hns, mean=c1m, sd=c1sd), rnorm(hns, mean=c2m, sd=c2sd),
+d0 <- matrix(c(rnorm(hns, mean=c1m, sd=c1sd), rnorm(hns, mean=c2m, sd=c2sd),
                rnorm(ns, mean=c1m, sd=c1sd)), nrow=ns)
-d <- rbind(d, c(mean(d[1:hns,1]), mean(d[1:hns,2])))
+d <- rbind(d0, c(mean(d0[1:hns,1]), mean(d0[1:hns,2])))
 d <- rbind(d, c(mean(d[(hns+1):ns,1]), mean(d[(hns+1):ns,2])))
 colnames(d) <- paste0("G", 1:2)
 df <- as.data.frame(d)
@@ -45,7 +45,7 @@ df$Legend=c(rep("Samples",ns), rep("Mean", 2))
 df$Condition <- factor(df$Condition)
 df$Pair <- factor(df$Pair)
 df$Legend <- factor(df$Legend, levels=c("Samples", "Mean"))
-
+browser()
 CairoPNG("ltw2.png", 1000, 600)
 p1 <- ggplot(df[,c(1,3:5)], aes(x=Condition, y=colnames(df[,c(2,3:5)])[1], group=Pair), colour=Condition) +
         # the Group=Pair will ensure the lines between each member of a pair are correct.
