@@ -7,6 +7,8 @@
 # no this is just my silly mistakeA p <- p + etc() is required!
 
 # some annotation in this link: https://rpubs.com/garedwards/107023
+# Ehem this cheecky so and so does not includ the code!
+# his welch Two sample t-test that's the ordinary t test function
 
 # note that supplemnt also defined delivery method, because presumably the guinea pigs drink it while they may have to nibble
 # the vitamin c or whatever,
