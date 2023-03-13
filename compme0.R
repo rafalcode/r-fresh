@@ -6,6 +6,11 @@
 # Important note, this seems to highlight some problem Cairo and the show() function
 # no this is just my silly mistakeA p <- p + etc() is required!
 
+# some annotation in this link: https://rpubs.com/garedwards/107023
+
+# note that supplemnt also defined delivery method, because presumably the guinea pigs drink it while they may have to nibble
+# the vitamin c or whatever,
+
 library(ggplot2)
 library(ggpubr)
 library(Cairo)
