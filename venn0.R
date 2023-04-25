@@ -20,8 +20,8 @@ ii <- 1+round(3*runif(64))
 ss <- seq(1,64,2)
 ss2 <- seq(2,64,2)
 le <- paste0(letters[ii[ss]], letters[ii[ss2]])
-l1 <- le[1:16]
-l2 <- le[17:32]
+l1 <- unique(le[1:16]) # it to unique-ize with sets.
+l2 <- unique(le[17:32])
 
 l2v <- list(Cortex = l1, SCN = l2)
 ven <- venndetail(l2v)
