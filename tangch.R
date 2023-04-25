@@ -13,13 +13,14 @@ subcol <- c(ERP="Dodger Blue", HER2P="Khaki", TNBC="Tomato")
 paircol <- c(P1="Steel Blue", P2="Rosy Brown", P3="Dark Sea Green", P4="Moccasin", P5="Plum", P6="Corn Silk", P7="Dark Salmon", P8="Spring Green", P9="Gold", P10="Powder Blue", P11="Maroon", P12="Lemon Chiffon", P13="Light Green", P14="Alice Blue", P15="Light Pink", P16="Sienna", P17="Aquamarine", P18="Gainsboro", P19="Dark Green", P20="Steel Blue", P21="Dark Orchid") 
 
 # load file with the data
-dfile <- "sigbetas.csv"
+dfile <- "sigbetas_hg38.csv"
 data <- read.csv(dfile, row.names=1)
 topn <- 5000 # the top number to show (they're ordered by p-value)
 da <- data[1:topn,]
 dam <- as.matrix(da)
 
-split = rep(1:4, times=c(8,8,7,7))
+# split = rep(1:4, times=c(8,8,7,7))
+split = rep(1:4, times=c(9,9,8,8))
 
 anfile <- "tatiss.csv"
 ta <- read.csv(anfile, row.names=1)
