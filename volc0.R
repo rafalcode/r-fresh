@@ -1,4 +1,4 @@
-#!/opt/R-4.1.3/bin/Rscript
+#!/usr/bin/env Rscript
 # example from EnhancedVolcano's vignette.
 # Cairo has no prolem generating the diagram.
 library(Cairo)
