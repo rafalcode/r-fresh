@@ -3,6 +3,8 @@
 # Blischak uses rembatchfx
 # Bli
 # this script does what?
+# Note the problem with this script if you want to learn about removeBatchEffect, is that is conevrts to eset strucutre which
+# makes it quite opaque, which ia  little disaapointing.
 library(ggplot2)
 library(Cairo)
 library(dplyr)
@@ -23,6 +25,7 @@ library(Biobase)
 fn <- "counts_per_sample.txt"
 # full <- read.delim(file_url, stringsAsFactors = FALSE)
 full <- read.delim(fn, stringsAsFactors = FALSE)
+
 # dim(full)
 # [1]   156 19419
 # the first 5 or 6 columns are metadata, then on the header we have names of genes or features that's why there
@@ -36,7 +39,7 @@ x <- t(full[, grep("ENSG", colnames(full))])
 p <- full %>% select(ind, bact, time, extr, rin)
 stopifnot(colnames(x) == rownames(p))
 eset <- ExpressionSet(assayData = x, phenoData = AnnotatedDataFrame(p))
-browser()
+
 # Filter lowly expressed genes.
 keep <- rowSums(cpm(exprs(eset)) > 1) > 6
 # sum(keep)
@@ -68,7 +71,7 @@ pData(eset)[, "batch"] <- sprintf("b%02d", pData(eset)[, "extr"])
 CairoPNG("bef_rbe.png", 800, 800)
 plotMDS(eset, labels = pData(eset)[, "time"], gene.selection = "common")
 dev.off()
-
+browser()
 # Remove the effect of the technical variables: batch (discrete) and RIN (continuous; a measure of RNA quality).
 exprs(eset) <- removeBatchEffect(eset, batch = pData(eset)[, "batch"], covariates = pData(eset)[, "rin"])
 
