@@ -33,6 +33,10 @@ CairoPNG("rap2.png", 800, 800)
 hist(r2, breaks =nbreaks)
 dev.off()
 
+CairoPDF("rap2.pdf", 800, 800)
+hist(r2, breaks =nbreaks)
+dev.off()
+
 CairoPNG("rap3.png", 800, 800)
 plot(x=rr, y=r2)
 dev.off()
