@@ -1,8 +1,10 @@
 #!/usr/bin/env Rscript
-# this script does what?
+# canonical example of plott_summs() from jtools.
+# if you get errors it's because you don't have the sandwich package installed.
 library(ggplot2)
 library(Cairo)
 library(jtools)
+library(stargazer)
 
 states <- as.data.frame(state.x77)
 fit1 <- lm(Income ~ Frost + Illiteracy + Murder + Population + Area + `Life Exp` + `HS Grad`, data = states, weights = runif(50, 0.1, 3))
