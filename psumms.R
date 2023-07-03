@@ -14,8 +14,9 @@ fit3 <- lm(Income ~ Frost + Illiteracy + Murder + Population + Area + `Life Exp`
 CairoPNG("psumms.png", 800, 800)
 # Plot all 3 regressions with custom predictor labels,
 # standardized coefficients, and robust standard errors
-plot_summs(fit1, fit2, fit3,
+ps <-plot_summs(fit1, fit2, fit3,
     # coefs = c("Frost Days" = "Frost", "% Illiterate" = "Illiteracy", "Murder Rate" = "Murder"),
     coefs = c("Frost", "Illiteracy", "Murder"),
     scale = TRUE, robust = TRUE)
+show(ps)
 dev.off()
