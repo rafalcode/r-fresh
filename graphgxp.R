@@ -37,7 +37,7 @@ plotdeg0 <- function(i, df, ng, ymax, ns)
 df <- read.csv("genexp.csv")
 
 ns <-dim(df)[1]-2
-ng <-dim(df)[2]-3
+ng <-dim(df)[2]-3 # becaus we've icbind()'d pheno columns 
 ncols <- sqrt(ng)
 ymax <- max(df[1:ns,1:ng])
 hns <- ns/2 # half the samples
