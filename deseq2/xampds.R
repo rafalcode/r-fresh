@@ -9,7 +9,10 @@ dds <- makeExampleDESeqDataSet(n=50000, m=36, betaSD=1) # betaSD=1 is more typic
 # the model.matrix is also in there and it's condition_B_vs_A" 
 # so differences "viewed from A" so to speak.
 # the dds object already has condition built in .. with an intercept.
-# BetaSD control the magnitude of the diffexp
+
+# big note:
+# BetaSD control the magnitude of the diffexp between the two conditions.
+# Like, you look at the function and none of that is explicit
 dds <- DESeq(dds)
 res0 <- results(dds)
 res2 <- results(dds, lfcThreshold=1)

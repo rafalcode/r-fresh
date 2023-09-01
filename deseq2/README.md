@@ -31,4 +31,6 @@ What can we tell?
 Well, sizefactors are a per sample thing, so probably the full meaning is library sizes or the number of reads a sample wa sable to provoke.
 
 # xampds.R
-means Example Dataset, here I daable with the log2FC value.
+means Example Dataset, here I dabble with the lfc parameter.
+which comes across as useful in the example data set
+but in real data it really cuts down on your sig genees.
