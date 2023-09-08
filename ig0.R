@@ -21,6 +21,7 @@ gn <- make_graph(~ Alice-Bob:Claire:Frank, Claire-Alice:Dennis:Frank:Esther,
 # that syntax is sort of weird. No quotes!
 # no it's no so weird. the first one means Alice .. is connected directly to Bolb, Claire and Frank
 # so it's three edges.
+# Alice is the source vertexZZ
 CairoPNG("igplot2.png", 800, 800)
 plot(gn)
 dev.off()
