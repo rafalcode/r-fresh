@@ -9,6 +9,9 @@ no new line is added.
 To get printf then
 you need sprintf
 
+# bexp.R
+run a bash command via R. Critically, uses a bash expansion, so not entirely trivial.
+
 # rcpp
 cxxfunction that's not from Rccp but from inline
 
@@ -65,3 +68,14 @@ additions of sd=1 rnorm.
 # R colors for C
 there are 657 of these, rcol1.R was used to generate most of rcolp.h (which means rcolor proportional RGB vlaues givien in [0,1] value format). I then editted th 
 
+# sgd series
+These are the seqgendiff trials. In the beginning it held promise, but I wrote
+ G for Gerard, G for garbled.
+for a reason, his terminology seems weird.
+* uses null for zero
+* seems obsessed with thinning all the time. This may have something to do with variance reduction, but is that right? Because he's pushing it all the time
+* "databased" is the idea of using existing (real) rnaseq datasets, and adding a simulated signal to it. This is the approach of seggendiff.
+* thinning, actually is binomial thinning and it means subsampling from the bionmial distribution and this is actually the method of actuall applying the artificial signal. Perhaps isntead of just adding? Maybe. 
+
+# Rmd files.
+there is more than one version it appears. v2 must be run via the rmarkdown package. see rmd2h.R script. dia.Rmd was the input file for it.
