@@ -10,7 +10,7 @@ library(limma)
 rchiv <- rchisq(1000,df=4) # 1000 values
 sd <- 0.3*sqrt(4/rchiv) # sure enough, 1000 values too.
 x <- matrix(rnorm(1000*6,sd=sd),1000,6)
-stop("o")
+
 # so in this way, each gene has a seprate variance, but it's the same for each sample
 rownames(x) <- paste("Gene",1:1000)
 
