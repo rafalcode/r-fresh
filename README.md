@@ -79,3 +79,7 @@ for a reason, his terminology seems weird.
 
 # Rmd files.
 there is more than one version it appears. v2 must be run via the rmarkdown package. see rmd2h.R script. dia.Rmd was the input file for it.
+
+# sha0.R
+playing with basic R graphics and the shape package. They are good at adding to previous plots, you can use the scale of the first plot as the canvas
+and position relative to it.
