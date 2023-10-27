@@ -6,7 +6,10 @@ library(DGCA, quietly = TRUE)
 # ref. https://cran.r-project.org/web/packages/DGCA/vignettes/DGCA_basic.html
 
 data(darmanis)
+# 'data.frame':   572 obs. of  158 variables
+# those 572 rows are genenames
 data(design_mat)
+# each sample belongs to one of two categories neuron or oligodendrocyte.
 
 # Note that the design matrix is a standard design matrix as used in other packages (e.g., limma, DESEq, MatrixEQTL), and specifies the group indices to be extracted from the original columns.
 # To run the full differential correlation analysis and extract all of the top differentially correlated pairs, run this:
