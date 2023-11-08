@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
-# checking out normalized coutns in DESeq2
+# nc, checking out normalized counts in DESeq2
 # have to work out what factors actually means in sizefacor and normalizationfactors.
-# are they weighting coeeficients of some kind.
+# are they weighting coefficients of some kind.
+
+# also 
 library(Cairo)
 library(DESeq2)
 library(pheatmap)
@@ -30,6 +32,14 @@ pheatmap(cou, show_rownames=F, cluster_cols=T, cluster_rows=F, scale="row",
       annotation_col=Conds)
 # pheatmap(cou)
 dev.off()
+
+# tyr to use pheatmap filename option
+hmfname <- "denc0.pdf"
+pheatmap(cou, show_rownames=F, cluster_cols=T, cluster_rows=F, scale="row",
+#          color=colorRampPalette(rev(brewer.pal(n = 7, name ="RdBu"))), 
+         color=colorRampPalette(rev(brewer.pal(n = 7, name ="RdBu")))(100), 
+      clustering_distance_cols="euclidean", clustering_method="complete", border_color=FALSE,
+      annotation_col=Conds, filename=hmfname)
 
 # don't use pheatmap's scale?
 # bah comment out, because:
