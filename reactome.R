@@ -13,14 +13,19 @@ de <- names(geneList)[abs(geneList) > 1.5] # de, diff exp I expect.
 x <- enrichPathway(gene=de, pvalueCutoff = 0.05, readable=TRUE)
 
 y <- gsePathway(geneList, pvalueCutoff=.2, pAdjustMethod="BH", verbose=F)
-returns a gsea
+# returns a gsea
 
 CairoPNG("reactome.png", 800, 800)
 vp <- ReactomePA::viewPathway("E2F mediated regulation of DNA replication", readable = TRUE, foldChange = geneList)
 show(vp)
 dev.off()
 
-CairoPNG("reactomedp.png", 800, 800)
+CairoPNG("reactomeerdp.png", 800, 800)
+# x is enrichResult so this may work ...
+dp <- dotplot(x, showCategory=30) + ggtitle("dotplot for Reactome")
+show(dp)
+dev.off()
+CairoPNG("reactomegrdp.png", 800, 800)
 # y is gseaResult so this may work ...
 dp <- dotplot(y, showCategory=30) + ggtitle("dotplot for Reactome")
 # only 1 pvalue? Odd. not very satisfying.
