@@ -7,6 +7,8 @@ library(ComplexHeatmap)
 
 mat <- read.table(system.file("extdata", package = "ComplexHeatmap", "tcga_lung_adenocarcinoma_provisional_ras_raf_mek_jnk_signalling.txt"), 
     header = TRUE, , sep = "\t") # the sep is necessary
+w <- which(mat=="  ")
+stop("o")
 # what we get in nmat is 172 obs. i.e. cases and 8 columns (variables) which are gene names.
 # stop("o")
 mat[is.na(mat)] <- "" # though there are plenty "empties" there are also "NA"
@@ -16,9 +18,11 @@ mat <-  mat[, -ncol(mat)]
 # actually the above two are just quick ways to get rid of first and last cols.
 
 mat <- t(as.matrix(mat))
+mat2 <- t(as.matrix(mat[1:6, 30:38])) # just a smaller thing
 # genes are rows now, and cases are columns .. that's the oncoprint style
+mat2[4,3] <- "HOMDEL;" # artificial manip
 
-col = c("HOMDEL" = "blue", "AMP" = "red", "MUT" = "#008000")
+colours = c("HOMDEL" = "blue", "AMP" = "red", "MUT" = "#008000")
 alter_fun = list(
     background = function(x, y, w, h) {
         grid.rect(x, y, w-unit(2, "pt"), h-unit(2, "pt"), 
@@ -41,7 +45,8 @@ alter_fun = list(
     }
 )
 
+op <- ComplexHeatmap::oncoPrint(mat2, alter_fun = alter_fun, col=colours, show_pct=T)
 # Cairo image template
-# CairoPNG("fname.png", 800, 800)
-# put plot command here
-# dev.off()
+CairoPNG("oncp0.png", 800, 800)
+show(op)# put plot command here
+dev.off()
