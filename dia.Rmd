@@ -1,3 +1,9 @@
+<!-- in many ways. a crap example
+I didn't know the carat gave the size of the diamond itself.
+But that's my fault.
+Why we should be interested by the very large number of smaller diamonds
+also seems obscure. The resulting graph is perplexing
+it looks like a renegade gamma function -->
 ---
 title: "Diamond sizes"
 date: 2016-08-25

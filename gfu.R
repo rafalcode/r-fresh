@@ -78,6 +78,7 @@ library(breastCancerTRANSBIG)
 library(breastCancerUPP)
 library(breastCancerUNT)
 library(breastCancerNKI)
+# library(breastCancerVDX) # another fanous one, not necessary here.
 
 # Table 1: Detailed overview for the data sets used in the case study.
 # Dataset	Patients [#]	ER+ [#]	HER2+ [#]	Age [years]	Grade [1/2/3]	Platform
@@ -94,6 +95,10 @@ library(breastCancerNKI)
 # For analysis comparing risk prediction models and determining prognosis [Section 5], we selected from those 1123 breast cancer patients only the patients that are node negative and didn’t receive any treatment (except local radiotherapy), which results in 713 patients [please consult Section 5 for more details] .
 
 data(breastCancerData)
+# this one command pulls in the datasets from above libraries in one fell swoop
+# i.e. "mainz7g"    "nki7g"      "transbig7g" "unt7g"      "upp7g"      "vdx7g" 
+# they are expressionset objects, and the 7g refers to seven genes i.e. only that
+# number are available via exprs() command.
 
 cinfo <- colnames(pData(mainz7g))
 
@@ -295,9 +300,9 @@ confusionMatrix(
 ## Detection Rate             0.1539     0.08563      0.3680      0.2416
 ## Detection Prevalence       0.1764     0.11825      0.4169      0.2885
 ## Balanced Accuracy          0.9555     0.84357      0.9124      0.8532
-From these results, the concordance of the predictions between these models is around 85 percent.
+# From these results, the concordance of the predictions between these models is around 85 percent.
 
-We can also compare the survival of patients for each subtype. We plot the surival curves of patients by subtype, based on each molecular classification algorithm
+# We can also compare the survival of patients for each subtype. We plot the surival curves of patients by subtype, based on each molecular classification algorithm
 
 # http://www.inside-r.org/r-doc/survival/survfit.coxph
 library(survival)
@@ -335,7 +340,6 @@ plot(main = "Surival Curves PAM50", surv.obj.PAM50,
 legend("topright",
        fill = c("#006d2c", "#8856a7","#a50f15", "#08519c", "#000000"),
        legend = c("Basal","Her2","LumA","LumB","Normal"),bty = "n")
-￼
 
 message("KAPLAN-MEIR CURVE - USING SCMOD2")
 ## KAPLAN-MEIR CURVE - USING SCMOD2
@@ -345,7 +349,6 @@ plot(main = "Surival Curves SCMOD2", surv.obj.SCMOD2,
 legend("topright",
        fill = c("#006d2c", "#8856a7","#a50f15", "#08519c"),
        legend = c("Basal","Her2","LumA","LumB"),bty = "n")
-￼
 
 ## GENERATE A OVERLAYED PLOT OF SURVIVAL CURVES
 message("Overlayed Surival Plots based on PAM50 and SCMOD2")
@@ -361,9 +364,8 @@ par(new=TRUE)
                             ## Basal    Her2        LuminalA  LuminalB
 lines(surv.obj.SCMOD2,col =c("#006d2c", "#8856a7","#a50f15", "#08519c"),lwd=2,lty=5)
 legend("bottomright",c("PAM50","SCMOD2"),lty=c("solid", "dashed"))
-￼
 
-We can now compare which of the molecular subtyping algorithms is more prognostic. To do this we use a Cross-validated Partial Likelihood (cvpl) calculation from survcomp. This returns the mean cross-validated partial likelihood, for each algorithm, using molecular subtypes for stratification
+# We can now compare which of the molecular subtyping algorithms is more prognostic. To do this we use a Cross-validated Partial Likelihood (cvpl) calculation from survcomp. This returns the mean cross-validated partial likelihood, for each algorithm, using molecular subtypes for stratification
 
 set.seed(12345)
 
@@ -382,21 +384,23 @@ SCMOD2_CVPL<-cvpl(x=data.for.survival.SCMOD2$age,
 print.data.frame(data.frame(cbind(PAM5_CVPL,SCMOD2_CVPL)))
 ##       PAM5_CVPL SCMOD2_CVPL
 ## logpl  1.424844    1.429175
-4.2Comparing Risk Prediction Models
-We compute the risk scores using the following list of algorithms (and corresponding genefu functions):
 
-Subtype Clustering Model using just the AURKA gene: scmgene.robust()
-Subtype Clustering Model using just the ESR1 gene: scmgene.robust()
-Subtype Clustering Model using just the ERBB2 gene: scmgene.robust()
-NPI: npi()
-GGI: ggi()
-GENIUS: genius()
-EndoPredict: endoPredict()
-OncotypeDx: oncotypedx()
-TamR: tamr()
-GENE70: gene70()
-PIK3CA: pik3cags()
-rorS: rorS()
+# 4.2Comparing Risk Prediction Models
+# We compute the risk scores using the following list of algorithms (and corresponding genefu functions):
+
+# Subtype Clustering Model using just the AURKA gene: scmgene.robust()
+# Subtype Clustering Model using just the ESR1 gene: scmgene.robust()
+# Subtype Clustering Model using just the ERBB2 gene: scmgene.robust()
+# NPI: npi()
+# GGI: ggi()
+# GENIUS: genius()
+# EndoPredict: endoPredict()
+# OncotypeDx: oncotypedx()
+# TamR: tamr()
+# GENE70: gene70()
+# PIK3CA: pik3cags()
+# rorS: rorS()
+
 # Load gene signature
 data(sig.endoPredict)
 data(sig.oncotypedx)
@@ -519,7 +523,7 @@ for(i in 1:length(dn)) {
   res <- rbind(res, rest)
 }
 names(ddemo.all) <- dn
-For further analysis and handling of the data we store all information in one object. We also remove the duplicated patients from the analysis and take only those patients into account, that have complete information for nodal, survival and treatment status.
+# For further analysis and handling of the data we store all information in one object. We also remove the duplicated patients from the analysis and take only those patients into account, that have complete information for nodal, survival and treatment status.
 
 ddemot <- NULL
 for(i in 1:length(ddemo.all)) {
@@ -540,7 +544,7 @@ myx <- complete.cases(res, ddemot[ , c("node", "treatment")]) &
 
 res <- res[myx, , drop=FALSE]
 ddemot <- ddemot[myx, , drop=FALSE]
-To compare the risk score performances, we compute the concordance index, which is the probability that, for a pair of randomly chosen comparable samples, the sample with the higher risk prediction will experience an event before the other sample or belongs to a higher binary class.
+# To compare the risk score performances, we compute the concordance index, which is the probability that, for a pair of randomly chosen comparable samples, the sample with the higher risk prediction will experience an event before the other sample or belongs to a higher binary class.
 
 cc.res <- complete.cases(res)
 datasetList <- c("MAINZ","TRANSBIG","UPP","UNT","NKI")
@@ -549,8 +553,7 @@ riskPList <- c("AURKA","ESR1","ERBB2","NPI", "GGI", "GENIUS",
 setT <- setE <- NULL
 resMatrix <- as.list(NULL)
 
-for(i in datasetList)
-{
+for(i in datasetList) {
   dataset.only <- ddemot[,"dataset"] == i
   patientsAll <- cc.res & dataset.only
 
@@ -574,9 +577,10 @@ for(i in datasetList)
     resMatrix[[Dat]] <- rbind(resMatrix[[Dat]], cindex)
   }
 }
-Using a random-effects model we combine the dataset-specific performance estimated into overall estimates for each risk prediction model:
 
-for(i in names(resMatrix)){
+# Using a random-effects model we combine the dataset-specific performance estimated into overall estimates for each risk prediction model:
+
+for(i in names(resMatrix)) {
   #Get a meta-estimate
   ceData <- combine.est(x=resMatrix[[i]][,"cindex"], x.se=resMatrix[[i]][,"cindex.se"], hetero=TRUE)
   cLower <- ceData$estimate + qnorm(0.025, lower.tail=TRUE) * ceData$se
@@ -586,7 +590,8 @@ for(i in names(resMatrix)){
   resMatrix[[i]] <- rbind(resMatrix[[i]], cindexO)
   rownames(resMatrix[[i]]) <- c(datasetList, "Overall")
 }
-In order to compare the different risk prediction models we compute one-sided p-values of the meta-estimates:
+
+# In order to compare the different risk prediction models we compute one-sided p-values of the meta-estimates:
 
 pv <- sapply(resMatrix, function(x) { return(x["Overall", c("cindex","cindex.se")]) })
 pv <- apply(pv, 2, function(x) { return(pnorm((x[1] - 0.5) / x[2], lower.tail=x[1] < 0.5)) })
@@ -594,31 +599,31 @@ printPV <- matrix(pv,ncol=length(names(resMatrix)))
 rownames(printPV) <- "P-value"
 colnames(printPV) <- names(pv)
 printPV<-t(printPV)
-And print the table of P-values:
 
-knitr::kable(printPV, digits=c(0, -1))
-P-value
-AURKA	0
-ESR1	0
-ERBB2	0
-NPI	0
-GGI	0
-GENIUS	0
-EndoPredict	0
-OncotypeDx	0
-TAMR13	0
-GENE70	0
-PIK3CA	0
-rorS	0
-The following figures represent the risk score performances measured by the concordance index each of the prognostic predictors.
+# And print the table of P-values:
+# knitr::kable(printPV, digits=c(0, -1))
+# P-value
+# AURKA	0
+# ESR1	0
+# ERBB2	0
+# NPI	0
+# GGI	0
+# GENIUS	0
+# EndoPredict	0
+# OncotypeDx	0
+# TAMR13	0
+# GENE70	0
+# PIK3CA	0
+# rorS	0
+
+# The following figures represent the risk score performances measured by the concordance index each of the prognostic predictors.
 
 RiskPList <- c("AURKA","ESR1","ERBB2","NPI", "GGI", "GENIUS",
                "EndoPredict","OncotypeDx","TAMR13","GENE70","PIK3CA","rorS")
 datasetListF <- c("MAINZ","TRANSBIG","UPP","UNT","NKI", "Overall")
 myspace <- "   "
 par(mfrow=c(2,2))
-  for (RP in RiskPList)
-  {
+  for (RP in RiskPList) {
 
   #<<forestplotDat,fig=TRUE>>=
   ## Forestplot
@@ -638,9 +643,8 @@ par(mfrow=c(2,2))
                 main=paste(RP))
 
   }
-￼￼￼
 
-We can also represent the overall estimates across all prognostic predictors, across all the datasets.
+# We can also represent the overall estimates across all prognostic predictors, across all the datasets.
 
 ## Overall Forestplot
 mybigspace <- "       "
@@ -670,9 +674,8 @@ metaplot.surv(mn=r.mean, lower=r.lower, upper=r.upper, labels=labeltext, xlim=c(
               boxsize=0.5, zero=0.5,
               col=meta.colors(box="royalblue",line="darkblue",zero="firebrick"),
               main="Overall Concordance Index")
-￼
 
-In order to assess the difference between the risk scores, we compute the concordance indices with their p-values and compare the estimates with the cindex.comp.meta with a paired student t test.
+# In order to assess the difference between the risk scores, we compute the concordance indices with their p-values and compare the estimates with the cindex.comp.meta with a paired student t test.
 
 cc.res <- complete.cases(res)
 datasetList <- c("MAINZ","TRANSBIG","UPP","UNT","NKI")
@@ -725,9 +728,9 @@ for(i in 1:length(resMatrixFull)){
 ccmData <- as.data.frame(ccmData)
 colnames(ccmData) <- riskPList
 rownames(ccmData) <- riskPList
-Table 2 displays the uncorrected p-values for the comparison of the different methods.
 
-Table 3 displays the corrected p-values using the Holms method, to correct for multiple testing.
+# Table 2 displays the uncorrected p-values for the comparison of the different methods.
+# Table 3 displays the corrected p-values using the Holms method, to correct for multiple testing.
 
 #kable(ccmData,format = "latex")
 knitr::kable(ccmData[,1:6], digits=c(0, rep(-1,ncol(ccmData[,1:6]))),

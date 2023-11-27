@@ -14,7 +14,7 @@ strength <- 0.95
 relement <- 1-sqrt(1-strength^2)
 rfacs <- relement*rnorm(N)
 r2 <- strength*rr + rfacs
-
+cat(paste0("We take an rnorm randvar vector of length ", N, " and derive a new vector from it by adding a weakened (", strength, ") version of original to a new randvec multiplied by ", relement, ".\n"))
 # I submitted this to ChatGPT and what was returned was reasonable:
 
 # It looks like you've provided some R code that generates random numbers using the rnorm function and combines them to create a new random variable r2 with a specified correlation (strength) between rr and rfacs.
@@ -55,6 +55,8 @@ dev.off()
 cat(paste0("Cor(rr,rfacs) is ", cor(rr,rfacs)), "\n")
 cat(paste0("Cor(rr,r2) is ", cor(rr,r2)), "\n")
 
+cat(paste0("Orig vec = ", paste0(rr, collapse=" "), "\n"))
+cat(paste0("Derived vec = ", paste0(r2, collapse=" "), "\n"))
 
 # Notes what I'm finding is that when strength is low, there is high correlation between rr and r2.
 # I have to "raise" the strength to 0.95 to get a still correlation of 0.85
