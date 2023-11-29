@@ -20,9 +20,11 @@ mSet <- preprocessRaw(rgSet)
 mSetSw <- SWAN(mSet,verbose=TRUE)
 
 ## ----betasByType, fig.cap = "Beta value dustributions. Density distributions of beta values before and after using SWAN.", echo = TRUE, fig.width=10, fig.height=5----
+CairoPNG("betacurves_raw_swan.png", 800, 800)
 par(mfrow=c(1,2), cex=1.25)
 densityByProbeType(mSet[,1], main = "Raw")
 densityByProbeType(mSetSw[,1], main = "SWAN")
+dev.off()
 
 ## ----filtering----------------------------------------------------------------
 detP <- detectionP(rgSet)
