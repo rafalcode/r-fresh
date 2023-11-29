@@ -272,8 +272,7 @@ check <- getMappedEntrezIDs(sig.cpg = sigCpGs)
 
 ## ----gometh4, fig.cap="Probe number bias in the cancer dataset.", fig.width=6, fig.height=5----
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-gst <- gometh(sig.cpg=sigCpGs, all.cpg=rownames(top), collection="GO",
-              plot.bias=TRUE)
+gst <- gometh(sig.cpg=sigCpGs, all.cpg=rownames(top), collection="GO", plot.bias=F)
 #check: topGSA(gst, n=10)
 
 ## ----gometh5------------------------------------------------------------------
@@ -333,7 +332,7 @@ if(!gettinginternalservererror) {
 
 ## ----goregion1, fig.cap="Probe number bias for DMRs in the cancer dataset.", fig.width=6, fig.height=5----
 gst.region <- goregion(results.ranges, all.cpg=rownames(M), 
-                       collection="GO", array.type="450K", plot.bias=TRUE)
+                       collection="GO", array.type="450K", plot.bias=F)
 
 ## ----goregion2----------------------------------------------------------------
 #check: topGSA(gst.region, n=10)
