@@ -21,4 +21,10 @@ library(pathfindR)
 # ARHGAP17	-0.6919330	0.0002708
 
 # By default, run_pathfindR() creates a temporary directory for writing the output files, including active subnetwork search results and a HTML report. To set the output directory, use output_dir:
-output_df <- run_pathfindR(example_pathfindR_input, p_val_threshold = 0.01, output_dir = "pfidir")
+# output_df <- run_pathfindR(example_pathfindR_input, p_val_threshold = 0.01, output_dir = "pfidir")
+# output_df <- run_pathfindR(example_pathfindR_input, p_val_threshold = 0.01)
+
+input_processed <- input_processing(example_pathfindR_input)
+visualize_terms(result_df = example_pathfindR_output,
+                input_processed = input_processed,
+                hsa_KEGG=T)

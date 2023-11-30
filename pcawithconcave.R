@@ -86,7 +86,7 @@ plotPCArflev <- function(mat, fac, pngname="mypcaplot.png")
     # factor fac, must be linked to mat, same number of columns
     lfac <- length(fac)
     if(lfac != ncol(mat)) {
-        stop("Don;t use this function if length(fac) != ncol(mat)\n")
+        stop("Don't use this function if length(fac) != ncol(mat)\n")
     }
     #colours
     levsfac <- nlevels(fac)
@@ -144,10 +144,10 @@ CairoPNG("bb0hc.png", 800, 800)
 plot(hc)
 dev.off()
 
-cutt0 <- cutree(hc, 6)
-names(cutt0) <- NULL
-cutt <- paste0("G", as.character(cutt0))
-ldf[[1]]$cutt <- factor(cutt)
+cutt0 <- cutree(hc, 6) # the groups get integer numbers as names
+names(cutt0) <- NULL # get rid of them
+cutt <- paste0("G", as.character(cutt0)) # convert them to plausible group labels
+ldf[[1]]$cutt <- factor(cutt) # enter these labels as the groups.
 ldf[[1]]$fac <- pheno$cancer
 plotPCArflev3(ldf, "eda2.png")
 
