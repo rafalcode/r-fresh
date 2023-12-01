@@ -19,5 +19,6 @@ dev.off()
 # do prodcue exactly the same thing.
 # it does produce and image of white fill
 # about 600 or 800 square (a default at work?)
+# (ehem .. it's 800. That's what you set your CairoPNG to)
 # you can faintly detect red on the outside
 
