@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 # this script does what?
+# from  https://stackoverflow.com/questions/33292067/pheatmap-annotation-colors-and-border
 library(ggplot2)
 library(Cairo)
 library(pheatmap)   
