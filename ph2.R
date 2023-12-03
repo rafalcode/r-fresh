@@ -28,7 +28,11 @@ pheatmap(t(scale(df)),
          clustering_distance_rows = "euclidean", border_color = FALSE)
 
 # Edit the relevant grob
-# grid.ls(grid.force()) # "col_annotation" looks like it's the one to edit
+lg <- grid.ls(grid.force()) # "col_annotation" looks like it's the one to edit
+# first find the parent of the box. the box number changes the parent doesn't
+g <- grep("col_annotation\\.3-3-3-3", lg$name)
+grid.gedit(lg$name[g+1], gp = gpar(col="black", lwd=1.5))
+# and g+1 will be the target box.
 # grid.gedit("col_annotation", gp = gpar(col="grey70"))
-# grid.gedit("col_annotation", gp = gpar(col="black"))
+# grid.gedit("col_annotation.3-3-3-3", gp = gpar(col="black"))
 dev.off()
