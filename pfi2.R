@@ -86,13 +86,16 @@ final_res <- annotate_term_genes(
 # quite naff as it turns out, only tables.
 # create_HTML_report2(example_pathfindR_input, example_processed, final_res, "pfi2outdir")
 
-CairoPNG("pfivt.png", 800, 800)
-visualize_terms(
-  result_df = final_res,
-  hsa_KEGG = FALSE, # boolean to indicate whether human KEGG gene sets were used for enrichment analysis or not
-  pin_name_path = "Biogrid")
-dev.off()
+# I gave this one a second go, I really wouldn't bother with it
+# as I said before it just 
+# visualize_terms(
+#   result_df = final_res,
+#   hsa_KEGG = FALSE, # boolean to indicate whether human KEGG gene sets were used for enrichment analysis or not
+#   pin_name_path = "Biogrid")
 
+# this lot could be ordered better
+# actually it's fairly naff TBH
 CairoPNG("pfiec.png", 800, 800)
-enrichment_chart(final_res[1:10, ])
+ec <- enrichment_chart(final_res[1:10, ])
+show(ec)
 dev.off()
