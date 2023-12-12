@@ -39,3 +39,6 @@ pwn <- nr*(nr-1)/2 # pairwise n
 dd_pairs2 = DGCA::dcTopPairs(dcPairs_res2, nPairs=pwn, classify=T, adjust="BH")
 # 4744 pairs <.05 pval, 484 <.05 pval-adj
 
+# ddcor_res = ddcorAll(inputMat = darmanis, design = design_mat,
+#   compare = c("oligodendrocyte", "neuron"),
+#   adjust = "none", nPerm = 0, nPairs = 100)

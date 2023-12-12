@@ -3,13 +3,13 @@
 library(Cairo)
 library(grid)
 
-CairoPNG("grob0.png", 800, 800)
+# CairoPNG("grob0.png", 800, 800)
 # grid.rect(gp=gpar(col="red"))
 # same thing, but more verbose
 grid.draw(applyEdit(rectGrob(), gEdit(gp=gpar(col="red"))))
 # Cairo image template
 # put plot command here
-dev.off()
+# dev.off()
 
 # Learnings:
 # Yes, 

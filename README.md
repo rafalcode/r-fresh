@@ -83,3 +83,6 @@ there is more than one version it appears. v2 must be run via the rmarkdown pack
 # sha0.R
 playing with basic R graphics and the shape package. They are good at adding to previous plots, you can use the scale of the first plot as the canvas
 and position relative to it.
+
+# grobs (graphical objects)
+Kind of got a bit of hadle on this, see relevant rjotting

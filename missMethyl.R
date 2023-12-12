@@ -321,7 +321,7 @@ cols <- c(2,4)[group]
 names(cols) <-group
 beta <- getBeta(mSet)
 
-gettinginternalservererror <- T
+gettinginternalservererror <- F
 if(!gettinginternalservererror) {
     CairoPNG("missMethdmrcatetop.png", 800, 800)
     par(mfrow=c(1,1))
