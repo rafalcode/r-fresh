@@ -60,7 +60,7 @@ p <- ggboxplot(ToothGrowth, x = "dose", y = "len", color = "dose", palette = "np
     stat_compare_means(label.y = 45)     # Add global Anova p-value
 show(p)
 dev.off()
-
+stop("o")
 # Multiple pairwise test against a reference group
 CairoPNG("cme5.png", 800, 800)
 p <- ggboxplot(ToothGrowth, x = "dose", y = "len",

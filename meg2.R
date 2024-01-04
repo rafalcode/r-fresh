@@ -2,6 +2,10 @@
 # this script does what? MEGENA's example script for plot_module
 # except it doesn't work
 # well, it was faulty.
+
+# NOTE: there is no conrasting here, it's just plain correlation between gene counts.
+# and discovereing networks there.
+
 library(MEGENA)
 library(Cairo)
 

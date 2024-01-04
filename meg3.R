@@ -34,7 +34,6 @@ output.summary <- MEGENA.ModuleSummary(MEGENA.output,
 }
 
 module.table = output.summary$module.table
-
 colnames(module.table)[1] <- "id"
 
 output.obj <- plot_module_hierarchy(module.table = module.table,
