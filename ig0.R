@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 # this script does what? Using igraph!
+
+# note that str(ig) isn't so revealing. YOu need to use V() and E()
 library(igraph)
 library(Cairo)
 
@@ -13,20 +15,23 @@ plot(g)
 dev.off()
 
 gz <- make_graph('Zachary')
+CairoPNG("igplot1.png", 800, 800)
+plot(gz)
+dev.off()
 
 # this one is quite good, and is related to a canonical exmpl in graph
-# theory: freindship groups (Kevin Bacon)
+# theory: friendship groups (Kevin Bacon)
 gn <- make_graph(~ Alice-Bob:Claire:Frank, Claire-Alice:Dennis:Frank:Esther,
                 George-Dennis:Frank, Dennis-Esther)
 # that syntax is sort of weird. No quotes!
 # no it's no so weird. the first one means Alice .. is connected directly to Bolb, Claire and Frank
 # so it's three edges.
-# Alice is the source vertexZZ
+# Alice is the source vertex
 CairoPNG("igplot2.png", 800, 800)
 plot(gn)
 dev.off()
 
-# So what's unusually about igraph is that the function syntax
+# So what's a bit unusual about igraph is that the function syntax
 # with V() and E() actually sets attributes, and need not be stored 
 V(gn)$age <- c(25, 31, 18, 23, 47, 22, 50) 
 V(gn)$gender <- c("f", "m", "f", "m", "m", "f", "m")
