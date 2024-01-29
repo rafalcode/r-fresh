@@ -62,7 +62,44 @@ K <- exp(-(phi^2)*(d^2))
 #                ylab = "autocorrelation")
 
 g <- mvtnorm::rmvnorm(5, sigma=K) # mean defaults to 0
+# so this actually is 5 variates each
 # matplot is part of standard graphics package
 # matplot(x, t(g), 
 #         type="l", 
 #         ylab="g")
+# that's actually quite a cute graph  but actually
+# there needn't be similarity in the shapes at all
+# but actually the key thing is the smoothness of the shapes.
+# usually rnorms would be very spikey when you took lots of variates of each one.
+# here we're only taking five but the important points is how each variate from 1 single drawing
+# are dependant with each other.
+
+# amplify the variation with:
+sigma_g <- 2
+g <- rmvnorm(5, sigma=(sigma_g^2)*K)
+
+# BUT, actually what we'll do is stick to one variate for each variable/tmiepoint
+# and add noise
+sigma_y <- 0.3
+eps <- rnorm(ntmpts, 0, sigma_y) # random noise
+
+g <- rmvnorm(1, sigma=(sigma_g^2)*K) # GP
+
+# additive noise
+y <- c(g) + eps # Simulated data = GP + random noise
+
+# for plotting
+# BEWARE this is not curving fitting. If it were, it would be great.
+# and looks fab.
+# BUT it's not: noise is add to the "curve".
+dat = tibble(year = year,
+             x = x,
+             y = y, 
+             gp = c(g))
+
+ggplot(dat, aes(x = year, y = y)) +
+
+# She does go on howvever to fit .. but using JAGS
+    geom_point(aes(colour = "Simulated Data")) +
+    geom_line(aes(x = year, y = gp, colour = "Gaussian Process")) +
+    labs(colour = "")
