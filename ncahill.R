@@ -22,12 +22,15 @@ library(Cairo)
 set.seed(28061989)
 
 ntmpts <- 100 # number of time points.
+
+# So, each time point is a separate random variable
+
 yrspan <- 200 # span of years.
 year <- sample(1:yrspan, ntmpts) %>% sort # unevenly spaced but ordered.
 x <- year/ntmpts
 
 # She talks about an autocorrelation function: it looks alot like a covariance matrix.
-# the topic is Gaussian Porcesses, but her interest is time points, UNevenly spaced.
+# the topic is Gaussian Processes, but her interest is time points, UNevenly spaced.
 
 # Step 1: We’ll create a matrix of distances between every combination of time points using the rdist function from the fields package.
 
@@ -35,6 +38,9 @@ d <- fields::rdist(x) # a square matrix ntmpts x ntmpts
 # actually shows the different between each time point
 
 # Step 2: We’re going to create an autocorrelation function which we’ll call K. This will be a function of the distances in dist and we’re going to make the correlation function decay exponentially.
+# NOTE that if they were EVENly spaced a function may not be necessary
+# because the distance between the time points is fixed.
+# however here that is not the case. SO THAT's WHY you need the function.
 K <- exp(-d^2)
 # looks alot like a covariance matrix.
 # and actually that is what it's becoming. Basically we have a quantity that varies over time
