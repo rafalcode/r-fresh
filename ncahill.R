@@ -3,6 +3,14 @@
 # from one of rpubs thingies: https://rpubs.com/ncahill_stat/889056
 # Niamh Cahill the author 
 # Cannot make head or tail of it.
+#
+# Well, hang on. A very key point is that there is no independence between the various points.
+# so you need function to define the nature of that independence
+# for time points and considering a quantity such as hunger or some other wasting quantity
+# the exp(-etc) function is good.
+
+# although iid is hard to get, it's easy .. no functions or anything
+
 library(R2jags)
 library(runjags)
 library(tidyverse)
@@ -14,7 +22,7 @@ library(Cairo)
 set.seed(28061989)
 
 ntmpts <- 100 # number of time points.
-yrspan < 200 # span of years.
+yrspan <- 200 # span of years.
 year <- sample(1:yrspan, ntmpts) %>% sort # unevenly spaced but ordered.
 x <- year/ntmpts
 
@@ -38,3 +46,17 @@ K <- exp(-d^2)
 #      type = "l",
 #      xlab = "year difference (hundred years)",
 #      ylab = "autocorrelation")
+
+# let's speed up decay ...
+phi <- 5
+K <- exp(-(phi^2)*(d^2))
+# plot(d[,1], K[,1], 
+#           type = "l",
+#                xlab = "year difference (hundred years)",
+#                ylab = "autocorrelation")
+
+g <- mvtnorm::rmvnorm(5, sigma=K) # mean defaults to 0
+# matplot is part of standard graphics package
+# matplot(x, t(g), 
+#         type="l", 
+#         ylab="g")
