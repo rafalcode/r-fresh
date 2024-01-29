@@ -98,8 +98,10 @@ dat = tibble(year = year,
              gp = c(g))
 
 ggplot(dat, aes(x = year, y = y)) +
-
-# She does go on howvever to fit .. but using JAGS
     geom_point(aes(colour = "Simulated Data")) +
     geom_line(aes(x = year, y = gp, colour = "Gaussian Process")) +
     labs(colour = "")
+
+# She does go on howvever to fit .. but using JAGS
+# In nay case the smoothed curve is what she calls a GP, and it's pretty
+# much a flip of what I thought, what I thought were variates are actually separate random variables
