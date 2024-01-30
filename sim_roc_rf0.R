@@ -1,9 +1,13 @@
+#!/usr/bin/env Rscript
 library(genefilter)
 library(MASS)
 library(pROC)
 library(docopt)
 library(DGCA)
 library(Cairo)
+
+# Overal note that AMcK does have little mistakes here and there. In the paper he talks about non signif being p < alpha
+# and here in this code ... I'm wary.
 
 # sigma is the pairwise correlation parameter matrix. AMcK follows MASS in this, gets ready to use MASS::mvrnorm
 # once set up rnbinom  (or whatever) can be run on it
@@ -15,6 +19,18 @@ library(Cairo)
 # so it is not at all like rnorm whihc only has one variable. Sigma is what defines the
 # correlation bewteen two variables, so it's no surprisie that alot of this code
 # is about setting it properly.
+
+# revisit 300124 still notoriously difficult to work out I'm afraid.
+# the genes are all given two letter names via the letters array aa, ab, ac, etc.
+# sigma_tot_b has sveral character vectors defining which pairs belong
+# goc and loc are gain of correl and loss of correl, they are not separate correl combos.
+# I'd also venture that the title "gain of correl"  should be "postive shift in correl"
+# because "gain" doesn't always fit too well i.e. A-, B= i..e the two genes are correlated
+# in Cond A and then uncorrelated in Cond B ... that's labelled as goc! I wouldn't agree.
+
+# To verify, there are only 6 interesting options of the 9 (coverd in his paper)
+# and goc is a lable for three of these and loc for the other three.
+
 args = commandArgs(trailingOnly = TRUE)
 print(args)
 
@@ -81,11 +97,11 @@ update_corr_structure <- function(sigma, n_genes, variance, corr_factor, dcor = 
 		if(dcor == "goc"){
 			sigma[["goc_gene_pairs"]] = c(sigma[["goc_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		} else if(dcor == "loc") {
 			sigma[["loc_gene_pairs"]] = c(sigma[["loc_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		}
 	}
     # also a labelling ...
@@ -94,27 +110,27 @@ update_corr_structure <- function(sigma, n_genes, variance, corr_factor, dcor = 
 		if(dcor_specific == "+/0"){
 			sigma[["pos_none_gene_pairs"]] = c(sigma[["pos_none_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		} else if(dcor_specific == "+/-"){
 			sigma[["pos_neg_gene_pairs"]] = c(sigma[["pos_neg_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		} else if(dcor_specific == "0/+"){
 			sigma[["none_pos_gene_pairs"]] = c(sigma[["none_pos_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		} else if(dcor_specific == "0/-"){
 			sigma[["none_neg_gene_pairs"]] = c(sigma[["none_neg_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		} else if (dcor_specific == "-/+"){
 			sigma[["neg_pos_gene_pairs"]] = c(sigma[["neg_pos_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		} else if(dcor_specific == "-/0"){
 			sigma[["neg_none_gene_pairs"]] = c(sigma[["neg_none_gene_pairs"]],
 				paste(letters_unique[(total_dc_genes + 1):(total_dc_genes + n_genes - 1)],
-				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep = " "))
+				letters_unique[(total_dc_genes + 2):(total_dc_genes + n_genes)], sep="|"))
 		}
 	}
 	sigma[["total_dc_genes"]] = total_dc_genes + n_genes
@@ -168,8 +184,8 @@ sigma_tot_b <- structure(list(
 
 #A+, B+ = no differential correlation
 # for ngeneset=2
-# 50 0 and 50 0
 # 0 50 and 0 50
+# 50 0 and 50 0
 # so the sigma is the same .. that's the way no correlation is obtained.
 n_apbp <- ngenesubset # number_apos_bpos
 sigma_tot_a = update_corr_structure(sigma = sigma_tot_a, n_genes = n_apbp,
@@ -179,9 +195,6 @@ sigma_tot_b = update_corr_structure(sigma = sigma_tot_b, n_genes = n_apbp,
 # what happens?
 # super and subdiagonals get value of fifty.
 
-write.csv(sigma_tot_a[[1]], "sigma_tot_a0.csv", quote=F)
-write.csv(sigma_tot_b[[1]], "sigma_tot_b0.csv", quote=F)
-
 #A+, B= = loss of correlation
 # 50 0 and 0 0
 # 0 50 and 0 0
@@ -190,6 +203,9 @@ sigma_tot_a = update_corr_structure(sigma = sigma_tot_a, n_genes = n_apbe,
 	variance = high_var, corr_factor = poscorrvalue, dcor = NULL)
 sigma_tot_b = update_corr_structure(sigma = sigma_tot_b, n_genes = n_apbe,
 	variance = high_var, corr_factor = 0, dcor = "loc", dcor_specific = "+/0")
+
+write.csv(sigma_tot_a[[1]], "sigma_tot_a0.csv", quote=F)
+write.csv(sigma_tot_b[[1]], "sigma_tot_b0.csv", quote=F)
 
 #A+, B- = loss of correlation
 # 50 0 and -50 0
