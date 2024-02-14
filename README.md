@@ -86,3 +86,6 @@ and position relative to it.
 
 # grobs (graphical objects)
 Kind of got a bit of hadle on this, see relevant rjotting
+
+# labrepel.R
+ggrepel's label_repel will put a back ground
