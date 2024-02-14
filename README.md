@@ -89,3 +89,6 @@ Kind of got a bit of hadle on this, see relevant rjotting
 
 # labrepel.R
 ggrepel's label_repel will put a back ground
+
+# bq0.R
+Finally I worked out how to embolden part of a character vaiable that servers as a text label
