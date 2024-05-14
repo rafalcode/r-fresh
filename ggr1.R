@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 library(Cairo)
 library(ggrepel)
+# NOTE ggrepel ... atcs on label aes!!
 # example from ggrepel's examples: Align labels on the top or bottom edge
 
 # Use hjust to justify the text neatly:
