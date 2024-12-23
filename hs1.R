@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
-# hiso no Cairo
+# hs0.R but not with Cairo
+# so it 
 
 # Create data
 totpts <- 2000 # total points.
@@ -20,10 +21,11 @@ pct2 <- 100*h2$counts[1]/totpts
 clr1 <- ifelse(h1$breaks < .05, "Khaki", "Grey80")
 clr2 <- ifelse(h2$breaks < .01, "Gold", ifelse (h2$breaks <.05, "Khaki", "Grey80"))
  
-# Final plot, no Ciaro
+# Final plot, no Cairo
 X11()
 par(mfrow=c(1,2))
 plot(h1, col=clr1, border=F , main="Pvalue Distri in bins of .05" , xlab="Pvalue bins", xlim=c(0,1))
 text(0.7, mx1*0.8, paste0("pvals<.05 = ", pct1, "%"))
 plot(h2, col=clr2, border=F , main="Pvalue Distri in bins of .01" , xlab="Pvalue bins", xlim=c(0,1))
 text(0.7, mx2*0.8, paste0("pvals<.01 = ", pct2, "%"))
+# ' readLines(stdin())

@@ -1,8 +1,14 @@
 #!/usr/bin/env Rscript
 # this script does what?
+# we randomly generated p-values from the beta variate, with shape 1=1, and shape2=4
+# which a heavy bottom tail (most values in first third of 0-1 space).
+
+# rbeta() is used. Actually the beta disrib is often used for the distirbution of 
+# a probability ... so it seems very suited to p-values as well.
 library(Cairo)
 
-# Create data
+# Create data, we shall run to different graphs of this vector of beta 
+# variables. 
 totpts <- 2000 # total points.
 v <- rbeta(totpts, 1 , 4)
  

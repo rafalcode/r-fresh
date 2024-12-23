@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
 # generate beta distribution curves
+# NOTE this is not he same 
 library(ggplot2)
 library(Cairo)
 
