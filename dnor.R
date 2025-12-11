@@ -1,0 +1,37 @@
+#!/usr/bin/env Rscript
+# do you know how to use dnorm?
+# it gives you the density value of normal variate.
+# by this I mean, is that if your variate was the mean itself (which actually is a variate)
+# then you would get 0.39 or something which is the peak value of your distribution
+
+# dnorm() always sticks to the theoretical, there is no variability in it 
+# so it's useful for imposing the theoretical distri over you data.
+
+library(ggplot2)
+library(Cairo)
+
+# You generated some data with rnorm()
+data <- rnorm(50, mean=50, sd=10)
+
+# ggplot works best with data frames so we convert ...
+df <- data.frame(values = data)
+
+# Create a data frame for the thoeretical normal curve, first we set the x-range using seq
+x_range <- seq(min(data), max(data), length.out = 20)
+theo_curve <- data.frame(x = x_range, y = dnorm(x_range, mean = 50, sd = 10))
+
+CairoPNG("dnor0.png", 800, 800)
+ggp <- ggplot() +
+       geom_histogram(data = df, aes(x = values, y = after_stat(density)), bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
+       geom_line(data = theo_curve, aes(x = x, y = y), color = "red", linewidth = 1) +
+       labs(title = "Histogram with Theoretical Normal Distribution", x = "Values", y = "Density") +
+       theme_minimal()
+show(ggp)
+dev.off()
+
+# this could have also have been done using ggplot's stat_function
+# which seems to already incorporate the x range.
+# stat_function(fun = dnorm,
+#                args = list(mean = mean(data), sd = sd(data)),
+#                color = "red",
+#                linewidth = 1) +
