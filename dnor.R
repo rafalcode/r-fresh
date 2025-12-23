@@ -22,6 +22,7 @@ theo_curve <- data.frame(x = x_range, y = dnorm(x_range, mean = 50, sd = 10))
 
 CairoPNG("dnor0.png", 800, 800)
 ggp <- ggplot() +
+       # note I don't know what the after_stat is
        geom_histogram(data = df, aes(x = values, y = after_stat(density)), bins = 30, fill = "lightblue", color = "black", alpha = 0.7) +
        geom_line(data = theo_curve, aes(x = x, y = y), color = "red", linewidth = 1) +
        labs(title = "Histogram with Theoretical Normal Distribution", x = "Values", y = "Density") +
